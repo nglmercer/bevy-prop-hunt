@@ -1,6 +1,9 @@
+use bevy::app::Propagate;
 use bevy::ecs::component::Mutable;
 use bevy::prelude::*;
 use bevy_tweening::{AnimTarget, IntoBoxedTweenable, Lens, TweenAnim};
+
+use crate::opacity::Opacity;
 
 pub trait TweenCommands {
     fn tween_component<C: Component<Mutability = Mutable> + 'static>(
@@ -43,5 +46,18 @@ impl Lens<Transform> for SmoothTransformLens {
             EaseFunction::SineInOut.sample_clamped(ratio),
         );
         target.scale = self.start.scale.lerp(self.end.scale, ratio);
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct FadeLens {
+    pub start: f32,
+    pub end: f32,
+}
+
+impl Lens<Opacity> for FadeLens {
+    fn lerp(&mut self, mut target: Mut<'_, Opacity>, ratio: f32) {
+        target.set_changed();
+        target.0 = self.start.lerp(self.end, ratio);
     }
 }

@@ -1,32 +1,53 @@
 use std::time::Duration;
 
-use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraPlugin, FreeCameraState};
+use bevy::camera_controller::free_camera::*;
+use bevy::feathers::FeathersPlugins;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy_tweening::{AnimCompletedEvent, AnimTargetKind, Tween, TweeningPlugin};
 
-use self::cameras::{CurrentCamera, DebugCamera, PlayerCamera};
+use self::cameras::{CurrentCamera, DebugCamera, PlayerCamera, run_freecamera_controller};
 use self::debug_texture::spawn_debug_texture;
 use self::lenses::{SmoothTransformLens, TweenCommands};
+use self::opacity::OpacityPlugin;
+use self::pause_menu::PauseState;
 use self::player::Player;
+use self::states::GameState;
 
 mod cameras;
 mod debug_texture;
 mod lenses;
+mod opacity;
+mod pause_menu;
 mod player;
+mod states;
 mod templates;
 
 fn main() -> AppExit {
     App::new()
         .add_plugins((
             DefaultPlugins.set(ImagePlugin::default_nearest()),
-            FreeCameraPlugin,
             TweeningPlugin,
+            OpacityPlugin,
+            pause_menu::plugin,
+            FeathersPlugins,
         ))
+        .init_state::<GameState>()
         .add_systems(Startup, test_scene)
         .add_systems(
             Update,
-            toggle_debug_camera.run_if(input_just_pressed(KeyCode::Tab)),
+            toggle_debug_camera
+                .run_if(in_state(GameState::Running))
+                .run_if(input_just_pressed(KeyCode::Tab)),
+        )
+        .add_systems(
+            RunFixedMainLoop,
+            (
+                run_freecamera_controller.run_if(in_state(GameState::Running)),
+                rotate_freecam_to.run_if(not(in_state(PauseState::Paused))),
+            )
+                .chain()
+                .in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
         )
         .run()
 }
@@ -39,6 +60,11 @@ fn test_scene(
     let debug_texture = spawn_debug_texture(&mut images, &mut materials).material;
 
     commands.queue_spawn_scene_list(bsn_list! [
+        Camera2d
+        Camera {
+            order: 1,
+        }
+        ,
         #Floor
         Mesh3d(asset_value(Plane3d::new(Vec3::Y, Vec2::splat(50.))))
         MeshMaterial3d<StandardMaterial>({debug_texture.clone()})
@@ -48,10 +74,10 @@ fn test_scene(
         Camera3d
         Projection::from(PerspectiveProjection {
             fov: 80_f32.to_radians(),
-            ..Default::default()
+            ..default()
         })
         Transform {
-            translation: Vec3::new(0., 5., 5.),
+            translation: Vec3::new(0., 6., 5.),
         }
         ,
         #DebugCamera
@@ -62,7 +88,7 @@ fn test_scene(
         }
         Projection::from(PerspectiveProjection {
             fov: 80_f32.to_radians(),
-            ..Default::default()
+            ..default()
         })
         ,
         #Player
@@ -83,19 +109,25 @@ fn toggle_debug_camera(
         (With<PlayerCamera>, Without<DebugCamera>),
     >,
     mut debug_camera: Single<
-        (&mut Camera, Entity, &Transform, Option<&FreeCameraState>),
+        (
+            &mut Camera,
+            Entity,
+            &Transform,
+            Option<&mut FreeCameraState>,
+        ),
         (Without<PlayerCamera>, With<DebugCamera>),
     >,
 ) {
     let is_player_cam_enabled = player_camera.0.is_active;
 
     let (ref mut player_camera, player_entity, player_transform) = *player_camera;
-    let (ref mut debug_camera, debug_entity, debug_transform, free_camera_state) = *debug_camera;
+    let (ref mut debug_camera, debug_entity, debug_transform, ref mut free_camera_state) =
+        *debug_camera;
 
     let camera_distance = player_transform
         .translation
         .distance(debug_transform.translation);
-    let tween_duration = (camera_distance.sqrt() * 100.).min(400.) as u64;
+    let tween_duration = (camera_distance.sqrt() * 100.).min(400.).max(200.) as u64;
 
     if is_player_cam_enabled {
         player_camera.is_active = false;
@@ -104,34 +136,45 @@ fn toggle_debug_camera(
         commands.entity(player_entity).try_remove::<CurrentCamera>();
         commands.entity(debug_entity).insert(CurrentCamera);
 
-        if let Some(_) = free_camera_state {
-            commands
-                .entity(debug_entity)
-                .insert(*player_transform)
-                .tween_component::<Transform>(
-                    Tween::new(
-                        EaseFunction::Linear,
-                        Duration::from_millis(tween_duration),
-                        SmoothTransformLens::new(*player_transform, *debug_transform),
-                    )
-                    .with_cycle_completed_event(true),
-                )
-                .observe(enable_debug_camera);
+        let mut end_transform = *player_transform;
+        end_transform.translation =
+            player_transform.translation + *player_transform.forward() + *player_transform.up();
 
-            fn enable_debug_camera(
-                trigger: On<AnimCompletedEvent>,
-                mut debug_camera: Single<(Entity, &mut FreeCameraState), With<DebugCamera>>,
-            ) {
-                if let AnimTargetKind::Component { entity: target } = trigger.target
-                    && target == debug_camera.0
-                {
-                    debug_camera.1.enabled = true;
+        if let Some(state) = free_camera_state {
+            let (yaw, pitch, _roll) = end_transform.rotation.to_euler(EulerRot::YXZ);
+            state.yaw = yaw;
+            state.pitch = pitch;
+        }
+
+        commands
+            .entity(debug_entity)
+            .insert(*player_transform)
+            .tween_component::<Transform>(
+                Tween::new(
+                    EaseFunction::Linear,
+                    Duration::from_millis(tween_duration),
+                    SmoothTransformLens::new(*player_transform, end_transform),
+                )
+                .with_cycle_completed_event(true),
+            )
+            .observe(enable_debug_camera);
+
+        fn enable_debug_camera(
+            trigger: On<AnimCompletedEvent>,
+            mut commands: Commands,
+            mut debug_camera: Single<(Entity, Option<&mut FreeCameraState>), With<DebugCamera>>,
+        ) {
+            if let AnimTargetKind::Component { entity: target } = trigger.target
+                && target == debug_camera.0
+            {
+                if let Some(state) = &mut debug_camera.1 {
+                    state.enabled = true;
+                } else {
+                    commands
+                        .entity(debug_camera.0)
+                        .insert((FreeCamera { ..default() }, FreeCameraState::default()));
                 }
             }
-        } else {
-            commands
-                .entity(debug_entity)
-                .insert((FreeCamera::default(), *player_transform));
         }
     } else {
         player_camera.is_active = true;
@@ -149,10 +192,8 @@ fn toggle_debug_camera(
                 SmoothTransformLens::new(*debug_transform, *player_transform),
             ));
 
-        commands
-            .entity(debug_entity)
-            .entry::<FreeCameraState>()
-            .or_default()
-            .and_modify(|mut s| s.enabled = false);
+        if let Some(state) = free_camera_state {
+            state.enabled = false;
+        }
     }
 }
