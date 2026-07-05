@@ -1,4 +1,3 @@
-use bevy::app::Propagate;
 use bevy::ecs::component::Mutable;
 use bevy::prelude::*;
 use bevy_tweening::{AnimTarget, IntoBoxedTweenable, Lens, TweenAnim};
@@ -23,6 +22,21 @@ impl TweenCommands for EntityCommands<'_> {
     }
 }
 
+pub fn smooth_transform_lerp(
+    target: &mut Transform,
+    start: &Transform,
+    end: &Transform,
+    ratio: f32,
+) {
+    target.translation = start
+        .translation
+        .lerp(end.translation, EaseFunction::SineOut.sample_clamped(ratio));
+    target.rotation = start
+        .rotation
+        .lerp(end.rotation, EaseFunction::SineInOut.sample_clamped(ratio));
+    target.scale = start.scale.lerp(end.scale, ratio);
+}
+
 #[derive(Default)]
 pub struct SmoothTransformLens {
     pub start: Transform,
@@ -37,15 +51,7 @@ impl SmoothTransformLens {
 
 impl Lens<Transform> for SmoothTransformLens {
     fn lerp(&mut self, mut target: Mut<'_, Transform>, ratio: f32) {
-        target.translation = self.start.translation.lerp(
-            self.end.translation,
-            EaseFunction::SineOut.sample_clamped(ratio),
-        );
-        target.rotation = self.start.rotation.lerp(
-            self.end.rotation,
-            EaseFunction::SineInOut.sample_clamped(ratio),
-        );
-        target.scale = self.start.scale.lerp(self.end.scale, ratio);
+        smooth_transform_lerp(&mut *target, &self.start, &self.end, ratio);
     }
 }
 
