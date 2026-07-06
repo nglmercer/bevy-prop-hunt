@@ -21,6 +21,7 @@ pub fn plugin(app: &mut App) {
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
+    camera: Single<&PlayerCamera>,
     mut player: Single<&mut LinearVelocity, With<LocalPlayer>>,
 ) {
     let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
@@ -30,7 +31,8 @@ fn move_player(
 
     let horizontal = right as i8 - left as i8;
     let vertical = up as i8 - down as i8;
-    let direction = Vector2::new(horizontal as Scalar, vertical as Scalar).clamp_length_max(1.0);
+    let direction = Vector2::from_angle(camera.yaw)
+        .rotate(Vector2::new(horizontal as Scalar, vertical as Scalar).clamp_length_max(1.0));
 
     let delta_secs = time.delta_secs();
 
