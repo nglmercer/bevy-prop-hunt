@@ -6,6 +6,8 @@ use bevy::feathers::theme::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::ui_widgets::Activate;
+use bevy::window::CursorGrabMode;
+use bevy::window::CursorOptions;
 use bevy_tweening::AnimTarget;
 use bevy_tweening::Tween;
 use bevy_tweening::TweenAnim;
@@ -100,6 +102,7 @@ fn menu_button(index: usize, label: impl Into<String>) -> impl Scene {
 
 fn hide_pause(
     _: On<Resume>,
+    mut windows: Query<(&Window, &mut CursorOptions)>,
     state: Res<State<PauseState>>,
     mut commands: Commands,
     pause_menu: Single<Entity, With<PauseMenu>>,
@@ -126,9 +129,23 @@ fn hide_pause(
     for menu_button in menu_buttons {
         commands.entity(menu_button).insert(ExitAnimation);
     }
+
+    for (window, mut cursor_options) in &mut windows {
+        if !window.focused {
+            continue;
+        }
+
+        cursor_options.grab_mode = CursorGrabMode::Locked;
+        cursor_options.visible = false;
+    }
 }
 
-fn show_pause(_: On<Pause>, state: Res<State<PauseState>>, mut commands: Commands) {
+fn show_pause(
+    _: On<Pause>,
+    mut cursors: Query<&mut CursorOptions, With<Window>>,
+    state: Res<State<PauseState>>,
+    mut commands: Commands,
+) {
     if *state != PauseState::Ready {
         return;
     }
@@ -142,6 +159,11 @@ fn show_pause(_: On<Pause>, state: Res<State<PauseState>>, mut commands: Command
         .set_state(PauseState::Paused);
 
     commands.spawn_scene(pause_menu());
+
+    for mut cursor_options in &mut cursors {
+        cursor_options.grab_mode = CursorGrabMode::None;
+        cursor_options.visible = true;
+    }
 }
 
 #[derive(Component, Default, Clone, Copy)]

@@ -4,12 +4,19 @@ mod control;
 mod freecam;
 mod tween;
 
+pub use freecam::RADIANS_PER_DOT;
+
 pub fn plugins(app: &mut App) {
     app.add_plugins((freecam::plugin, tween::plugin, control::plugin));
 }
 
 #[derive(Component, Clone, Copy, FromTemplate)]
-pub struct PlayerCamera;
+pub struct PlayerCamera {
+    pub yaw: f32,
+    pub pitch: f32,
+    pub rot: Quat,
+    pub target_pos: Vec3,
+}
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CameraMode {

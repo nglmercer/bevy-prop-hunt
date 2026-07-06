@@ -1,30 +1,57 @@
+use std::f32::consts::PI;
 use std::time::Duration;
 
+use avian3d::prelude::PhysicsSystems;
 use bevy::prelude::*;
 
 use crate::lenses::smooth_transform_lerp;
 use crate::player::LocalPlayer;
 
-use super::PlayerCamera;
+use super::{CameraMode, FreeCamera, PlayerCamera};
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Last, (update_fixed_player_camera, update_player_camera));
+    app.add_systems(
+        FixedPostUpdate,
+        (
+            update_player_camera,
+            update_fixed_player_camera,
+            update_tween_player_camera,
+        )
+            .chain()
+            .in_set(PhysicsSystems::Last),
+    );
+}
+
+fn update_player_camera(
+    cam_mode: Res<State<CameraMode>>,
+    mut camera: Single<&mut PlayerCamera>,
+    freecamera: Single<&Transform, (With<FreeCamera>, Without<PlayerCamera>)>,
+    player: Single<&Transform, (With<LocalPlayer>, Without<FreeCamera>)>,
+) {
+    match cam_mode.get() {
+        CameraMode::Playing => {}
+        CameraMode::Freecam => {
+            camera.rot = Transform::default()
+                .looking_at(player.translation - freecamera.translation, Vec3::Y)
+                .rotation;
+            let euler = camera.rot.to_euler(EulerRot::YXZ);
+            camera.yaw = euler.0;
+            camera.pitch = euler.1;
+        }
+    }
+
+    // TODO: Raycast (Walls layers) to target camera position and put the camera on hit pos
+    camera.target_pos =
+        player.translation + Vec3::new(0., 2., 0.) + camera.rot * Vec3::new(0., 2., 10.);
 }
 
 fn update_fixed_player_camera(
-    mut camera: Single<
-        &mut Transform,
-        (
-            With<PlayerCamera>,
-            Without<LocalPlayer>,
-            Without<CameraTween>,
-        ),
-    >,
-    player: Single<&Transform, (Without<PlayerCamera>, With<LocalPlayer>)>,
+    mut camera: Single<(&mut Transform, &PlayerCamera), Without<CameraTween>>,
 ) {
-    // TODO: Raycast (Walls layers) to target camera position and put the camera on hit pos
-    let target_pos = player.translation + Vec3::new(0., 4., 10.);
-    camera.translation = target_pos;
+    let (ref mut camera_trans, camera_player) = *camera;
+
+    camera_trans.translation = camera_player.target_pos;
+    camera_trans.rotation = camera_player.rot;
 }
 
 #[derive(Component, Debug, Clone)]
@@ -34,19 +61,12 @@ pub struct CameraTween {
     pub duration: Duration,
 }
 
-fn update_player_camera(
+fn update_tween_player_camera(
     mut commands: Commands,
     time: Res<Time>,
-    mut camera: Single<
-        (Entity, &mut Transform, &mut CameraTween),
-        (With<PlayerCamera>, Without<LocalPlayer>),
-    >,
-    player: Single<&Transform, (Without<PlayerCamera>, With<LocalPlayer>)>,
+    mut camera: Single<(Entity, &mut Transform, &mut CameraTween, &PlayerCamera)>,
 ) {
-    // TODO: Raycast (Walls layers) to target camera position and put the camera on hit pos
-    let target_pos = player.translation + Vec3::new(0., 4., 10.);
-
-    let (entity, ref mut transform, ref mut camera_tween) = *camera;
+    let (entity, ref mut transform, ref mut camera_tween, camera_player) = *camera;
 
     camera_tween.time += time.delta();
 
@@ -56,7 +76,8 @@ fn update_player_camera(
     }
 
     let mut target_transform = Transform::default();
-    target_transform.translation = target_pos;
+    target_transform.translation = camera_player.target_pos;
+    target_transform.rotation = camera_player.rot;
 
     smooth_transform_lerp(
         transform,

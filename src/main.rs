@@ -6,6 +6,7 @@ use bevy_tweening::TweeningPlugin;
 use self::cameras::{CameraMode, FreeCamera, PlayerCamera};
 use self::debug_texture::spawn_debug_texture;
 use self::opacity::OpacityPlugin;
+use self::pause_menu::Pause;
 use self::player::{LocalPlayer, Player};
 use self::states::GameState;
 
@@ -65,6 +66,8 @@ fn test_scene(
         Transform {
             translation: Vec3::new(0., 6., 5.),
         }
+        Mesh3d(asset_value(Cuboid::default()))
+        MeshMaterial3d<StandardMaterial>({debug_texture.clone()})
         ,
         #DebugCamera
         FreeCamera
@@ -89,4 +92,6 @@ fn test_scene(
         MeshMaterial3d<StandardMaterial>(debug_texture)
         ,
     ]);
+
+    commands.trigger(Pause);
 }
