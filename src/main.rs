@@ -7,6 +7,7 @@ use self::cameras::{CameraMode, FreeCamera, PlayerCamera};
 use self::debug_texture::spawn_debug_texture;
 use self::opacity::OpacityPlugin;
 use self::pause_menu::Pause;
+use self::physics::PhysicsLayers;
 use self::player::{LocalPlayer, Player};
 use self::states::GameState;
 
@@ -15,6 +16,7 @@ mod debug_texture;
 mod lenses;
 mod opacity;
 mod pause_menu;
+mod physics;
 mod player;
 mod states;
 mod templates;
@@ -55,6 +57,9 @@ fn test_scene(
         template_value(Collider::cuboid(100., 0.5, 100.))
         Mesh3d(asset_value(Plane3d::new(Vec3::Y, Vec2::splat(50.))))
         MeshMaterial3d<StandardMaterial>({debug_texture.clone()})
+        CollisionLayers {
+            memberships: PhysicsLayers::Map,
+        }
         ,
         #PlayerCamera
         PlayerCamera
@@ -90,6 +95,9 @@ fn test_scene(
             translation: Vec3::new(0., 2., -5.),
         }
         MeshMaterial3d<StandardMaterial>(debug_texture)
+        CollisionLayers {
+            memberships: PhysicsLayers::Player,
+        }
         ,
     ]);
 

@@ -1,10 +1,11 @@
-use std::f32::consts::PI;
 use std::time::Duration;
 
-use avian3d::prelude::PhysicsSystems;
+use avian3d::math::Dir;
+use avian3d::prelude::{PhysicsSystems, SpatialQuery, SpatialQueryFilter};
 use bevy::prelude::*;
 
 use crate::lenses::smooth_transform_lerp;
+use crate::physics::PhysicsLayers;
 use crate::player::LocalPlayer;
 
 use super::{CameraMode, FreeCamera, PlayerCamera};
@@ -23,6 +24,7 @@ pub fn plugin(app: &mut App) {
 }
 
 fn update_player_camera(
+    raycaster: SpatialQuery,
     cam_mode: Res<State<CameraMode>>,
     mut camera: Single<&mut PlayerCamera>,
     freecamera: Single<&Transform, (With<FreeCamera>, Without<PlayerCamera>)>,
@@ -40,9 +42,27 @@ fn update_player_camera(
         }
     }
 
-    // TODO: Raycast (Walls layers) to target camera position and put the camera on hit pos
-    camera.target_pos =
-        player.translation + Vec3::new(0., 2., 0.) + camera.rot * Vec3::new(0., 2., 10.);
+    let base_pos = player.translation + Vec3::new(0., 2., 0.);
+    let camera_dir = camera.rot * Vec3::new(0., 2., 10.);
+
+    let target_pos = base_pos + camera_dir;
+
+    let Ok((dir, length)) = Dir::new_and_length(camera_dir) else {
+        return;
+    };
+
+    let Some(hit_data) = raycaster.cast_ray(
+        base_pos,
+        dir,
+        length,
+        false,
+        &SpatialQueryFilter::default().with_mask(PhysicsLayers::Map),
+    ) else {
+        camera.target_pos = target_pos;
+        return;
+    };
+
+    camera.target_pos = base_pos + dir * hit_data.distance;
 }
 
 fn update_fixed_player_camera(
