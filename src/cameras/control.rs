@@ -63,6 +63,13 @@ fn enable_freecam(
         let (yaw, pitch, _roll) = end_transform.rotation.to_euler(EulerRot::YXZ);
         state.yaw = yaw;
         state.pitch = pitch;
+    } else {
+        let (yaw, pitch, _roll) = player_transform.rotation.to_euler(EulerRot::YXZ);
+        let mut state = FreeCameraState::default();
+        state.yaw = yaw;
+        state.pitch = pitch;
+
+        commands.entity(freecam_entity).insert(state);
     }
 
     let tween_duration = calculate_tween_duration(player_transform, &end_transform);
@@ -83,16 +90,13 @@ fn enable_freecam(
     fn enable_freecam_controls(
         _: On<AnimCompletedEvent>,
         mut commands: Commands,
-        mut debug_camera: Single<(Entity, Option<&mut FreeCameraState>), With<FreeCamera>>,
+        mut debug_camera: Single<(Entity, &mut FreeCameraState), With<FreeCamera>>,
     ) {
-        if let Some(state) = &mut debug_camera.1 {
-            state.enabled = true;
-        } else {
-            commands.entity(debug_camera.0).insert((
-                bevy::camera_controller::free_camera::FreeCamera { ..default() },
-                FreeCameraState::default(),
-            ));
-        }
+        commands
+            .entity(debug_camera.0)
+            .insert_if_new(bevy::camera_controller::free_camera::FreeCamera { ..default() });
+
+        debug_camera.1.enabled ^= true;
     }
 }
 
