@@ -38,14 +38,11 @@ pub fn uv_debug_texture() -> Image {
 }
 
 pub fn spawn_debug_texture(
-    images: &mut Assets<Image>,
+    image: Handle<Image>,
     materials: &mut Assets<StandardMaterial>,
-) -> DebugTexture {
-    let image = images.add(uv_debug_texture());
-    let material = materials.add(StandardMaterial {
-        base_color_texture: Some(image.clone()),
+) -> Handle<StandardMaterial> {
+    materials.add(StandardMaterial {
+        base_color_texture: Some(image),
         ..Default::default()
-    });
-
-    DebugTexture { image, material }
+    })
 }

@@ -10,7 +10,10 @@ use crate::player::LocalPlayer;
 
 use super::{CameraMode, FreeCamera, PlayerCamera};
 
-pub fn plugin(app: &mut App) {
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CameraSystemsSet;
+
+pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         FixedPostUpdate,
         (
@@ -19,7 +22,8 @@ pub fn plugin(app: &mut App) {
             update_tween_player_camera,
         )
             .chain()
-            .in_set(PhysicsSystems::Last),
+            .after(PhysicsSystems::Last)
+            .in_set(CameraSystemsSet),
     );
 }
 
@@ -75,7 +79,7 @@ fn update_fixed_player_camera(
 }
 
 #[derive(Component, Debug, Clone)]
-pub struct CameraTween {
+pub(super) struct CameraTween {
     pub reference: Transform,
     pub time: Duration,
     pub duration: Duration,

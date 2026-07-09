@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 mod control;
 mod freecam;
-mod tween;
+pub mod tween;
 
 pub use freecam::RADIANS_PER_DOT;
 
