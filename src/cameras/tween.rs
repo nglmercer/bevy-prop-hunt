@@ -1,7 +1,8 @@
 use std::time::Duration;
 
 use avian3d::math::Dir;
-use avian3d::prelude::{PhysicsSystems, SpatialQuery, SpatialQueryFilter};
+use avian3d::parry::math::Pose3;
+use avian3d::prelude::{Collider, PhysicsSystems, SpatialQuery, SpatialQueryFilter};
 use bevy::prelude::*;
 
 use crate::lenses::smooth_transform_lerp;
@@ -32,13 +33,13 @@ fn update_player_camera(
     cam_mode: Res<State<CameraMode>>,
     mut camera: Single<&mut PlayerCamera>,
     freecamera: Single<&Transform, (With<FreeCamera>, Without<PlayerCamera>)>,
-    player: Single<&Transform, (With<LocalPlayer>, Without<FreeCamera>)>,
+    player: Single<(&Transform, &Collider), (With<LocalPlayer>, Without<FreeCamera>)>,
 ) {
     match cam_mode.get() {
         CameraMode::Playing => {}
         CameraMode::Freecam => {
             camera.rot = Transform::default()
-                .looking_at(player.translation - freecamera.translation, Vec3::Y)
+                .looking_at(player.0.translation - freecamera.translation, Vec3::Y)
                 .rotation;
             let euler = camera.rot.to_euler(EulerRot::YXZ);
             camera.yaw = euler.0;
@@ -46,7 +47,12 @@ fn update_player_camera(
         }
     }
 
-    let base_pos = player.translation + Vec3::new(0., 2., 0.);
+    let shape = player
+        .1
+        .shape_scaled()
+        .compute_aabb(&Pose3::from_parts(Vec3::ZERO, player.0.rotation));
+
+    let base_pos = player.0.translation + Vec3::new(0., shape.maxs.y, 0.);
     let camera_dir = camera.rot * Vec3::new(0., 2., 10.);
 
     let target_pos = base_pos + camera_dir;
@@ -79,7 +85,7 @@ fn update_fixed_player_camera(
 }
 
 #[derive(Component, Debug, Clone)]
-pub(super) struct CameraTween {
+pub struct CameraTween {
     pub reference: Transform,
     pub time: Duration,
     pub duration: Duration,

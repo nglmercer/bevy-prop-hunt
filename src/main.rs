@@ -80,8 +80,6 @@ fn test_scene(
         Transform {
             translation: Vec3::new(0., 6., 5.),
         }
-        Mesh3d(asset_value(Cuboid::default()))
-        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut materials)})
         ,
         #DebugCamera
         FreeCamera
@@ -106,6 +104,18 @@ fn test_scene(
         MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut materials)})
         CollisionLayers {
             memberships: PhysicsLayers::Player,
+        }
+        ,
+        // Prop
+        template_value(RigidBody::Dynamic)
+        template_value(Collider::cone(1., 2.))
+        Mesh3d(asset_value(Cone::new(1., 2.)))
+        Transform {
+            translation: Vec3::new(-10., 2., -5.),
+        }
+        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut materials)})
+        CollisionLayers {
+            memberships: PhysicsLayers::Prop,
         }
         ,
         // Prop
