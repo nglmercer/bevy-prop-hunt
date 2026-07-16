@@ -128,8 +128,8 @@ fn disable_freecam(
         .insert(*freecam_transform)
         .insert_if_new(CameraTween {
             reference: *freecam_transform,
-            time: Duration::ZERO,
             duration: Duration::from_millis(tween_duration),
+            ..default()
         });
 
     if let Some(state) = freecam_state {

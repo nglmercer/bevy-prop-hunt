@@ -60,8 +60,8 @@ fn handle_morph(
 
     commands.entity(camera.0).insert(CameraTween {
         reference: camera.1.clone(),
-        time: Duration::ZERO,
         duration: Duration::from_millis(300),
+        ..default()
     });
 }
 

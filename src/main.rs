@@ -18,6 +18,7 @@ mod opacity;
 mod pause_menu;
 mod physics;
 mod player;
+mod shared;
 mod states;
 mod templates;
 
