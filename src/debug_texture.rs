@@ -2,12 +2,6 @@ use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
 use bevy::render::render_resource::*;
 
-#[derive(Resource)]
-pub struct DebugTexture {
-    pub image: Handle<Image>,
-    pub material: Handle<StandardMaterial>,
-}
-
 /// Creates a colorful test pattern
 pub fn uv_debug_texture() -> Image {
     const TEXTURE_SIZE: usize = 8;

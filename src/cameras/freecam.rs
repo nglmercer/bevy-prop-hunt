@@ -3,10 +3,8 @@ use std::f32::consts::PI;
 use bevy::camera_controller::free_camera::{
     FreeCamera, FreeCameraState, VerticalMovementAxis, rotate_freecam_to,
 };
-use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit};
-use bevy::math::ops::exp;
+use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
-use bevy::window::{CursorGrabMode, CursorOptions};
 
 use crate::pause_menu::PauseState;
 use crate::states::GameState;

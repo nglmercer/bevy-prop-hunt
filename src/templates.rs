@@ -2,6 +2,7 @@ use bevy::asset::HandleTemplate;
 use bevy::ecs::template::TemplateContext;
 use bevy::prelude::*;
 
+#[expect(dead_code, reason="Maybe used")]
 #[derive(Default)]
 pub struct BuildMesh3d(pub HandleTemplate<Mesh>);
 
