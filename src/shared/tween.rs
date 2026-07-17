@@ -12,6 +12,9 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, update_tween::<()>);
 }
 
+#[derive(Component)]
+pub struct DespawnOnTweenEnd;
+
 pub struct TransformTween<Marker: 'static = ()> {
     pub reference: Transform,
     pub target: Transform,
@@ -66,13 +69,22 @@ impl<Marker: 'static> Component for TransformTween<Marker> {
 pub fn update_tween<Marker: 'static>(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut Transform, &mut TransformTween<Marker>)>,
+    mut query: Query<(
+        Entity,
+        &mut Transform,
+        &mut TransformTween<Marker>,
+        Has<DespawnOnTweenEnd>,
+    )>,
 ) {
-    for (entity, ref mut transform, ref mut tween) in query.iter_mut() {
+    for (entity, ref mut transform, ref mut tween, should_despawn) in query.iter_mut() {
         tween.time += time.delta();
 
         if tween.time > tween.duration {
-            commands.entity(entity).remove::<TransformTween<Marker>>();
+            if should_despawn {
+                commands.entity(entity).despawn();
+            } else {
+                commands.entity(entity).remove::<TransformTween<Marker>>();
+            }
             return;
         }
 

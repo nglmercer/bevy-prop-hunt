@@ -6,10 +6,15 @@ use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
+use bevy_hanabi::{EffectProperties, ParticleEffect, VectorValue};
 
 use crate::cameras::tween::{CameraSystemsSet, CameraTween};
 use crate::cameras::{CameraMode, CurrentCamera, PlayerCamera};
+use crate::client::particles::emitters::trail::TrailParticleEmitter;
+use crate::client::particles::magic::MagicParticleEffect;
 use crate::physics::PhysicsLayers;
+use crate::shared::timed::DespawnOnTime;
+use crate::shared::tween::TransformTween;
 use crate::states::GameState;
 
 use super::{LocalPlayer, Player};
@@ -35,28 +40,68 @@ pub(super) fn plugin(app: &mut App) {
 
 fn handle_morph(
     mut commands: Commands,
-    current_player: Single<Entity, (With<LocalPlayer>, Without<MorphColddown>)>,
-    target: Single<Entity, With<PropTarget>>,
-    camera: Single<(Entity, &Transform), (With<CurrentCamera>, With<PlayerCamera>)>,
+    magic_effect: Res<MagicParticleEffect>,
+    current_player: Single<
+        (Entity, &Transform),
+        (
+            With<LocalPlayer>,
+            Without<MorphColddown>,
+            (Without<PropTarget>, Without<CurrentCamera>),
+        ),
+    >,
+    target: Single<
+        (Entity, &Transform),
+        (
+            With<PropTarget>,
+            (Without<LocalPlayer>, Without<CurrentCamera>),
+        ),
+    >,
+    camera: Single<
+        (Entity, &Transform),
+        (
+            With<CurrentCamera>,
+            With<PlayerCamera>,
+            (Without<LocalPlayer>, Without<PropTarget>),
+        ),
+    >,
 ) {
     commands
-        .entity(*target)
+        .entity(target.0)
         .remove::<PropTarget>()
         .insert(Player)
         .insert(LocalPlayer)
+        .insert(MorphColddown(Duration::from_secs(1)))
         .insert(CollisionLayers {
             memberships: PhysicsLayers::Player.into(),
             ..default()
         });
 
     commands
-        .entity(*current_player)
+        .entity(current_player.0)
         .remove::<LocalPlayer>()
         .remove::<Player>()
         .insert(CollisionLayers {
             memberships: PhysicsLayers::Prop.into(),
             ..default()
         });
+
+    let normal = (current_player.1.translation - target.1.translation).normalize_or_zero();
+
+    commands.spawn((
+        TrailParticleEmitter {
+            following: target.0,
+        },
+        TransformTween::<()> {
+            reference: *current_player.1,
+            target: *target.1,
+            duration: Duration::from_millis(500),
+            ..default()
+        },
+        DespawnOnTime::new(Duration::from_millis(900)),
+        ParticleEffect::new((&**magic_effect).clone()),
+        EffectProperties::default()
+            .with_properties([(String::from("normal"), VectorValue::new_vec3(normal).into())]),
+    ));
 
     commands.entity(camera.0).insert(CameraTween {
         reference: camera.1.clone(),

@@ -1,6 +1,7 @@
 use avian3d::prelude::*;
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
+use bevy_hanabi::HanabiPlugin;
 use bevy_tweening::TweeningPlugin;
 
 use self::cameras::{CameraMode, CurrentCamera, FreeCamera, PlayerCamera};
@@ -12,6 +13,7 @@ use self::player::{LocalPlayer, Player};
 use self::states::GameState;
 
 mod cameras;
+mod client;
 mod debug_texture;
 mod lenses;
 mod opacity;
@@ -30,9 +32,13 @@ fn main() -> AppExit {
             PhysicsPlugins::default(),
             FeathersPlugins,
             OpacityPlugin,
+            HanabiPlugin,
             cameras::plugins,
             player::plugins,
             pause_menu::plugin,
+            client::plugins,
+            shared::timed::plugin,
+            shared::tween::plugin,
         ))
         .init_state::<GameState>()
         .insert_state(CameraMode::Playing)
@@ -50,7 +56,7 @@ fn test_scene(
     commands.queue_spawn_scene_list(bsn_list! [
         Camera2d
         Camera {
-            order: 1,
+            order: 10,
         }
         ,
         Node {
@@ -73,14 +79,14 @@ fn test_scene(
         #PlayerCamera
         PlayerCamera
         CurrentCamera
+        Transform {
+            translation: Vec3::new(0., 6., 5.),
+        }
         Camera3d
         Projection::from(PerspectiveProjection {
             fov: 80_f32.to_radians(),
             ..default()
         })
-        Transform {
-            translation: Vec3::new(0., 6., 5.),
-        }
         ,
         #DebugCamera
         FreeCamera
