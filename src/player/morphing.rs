@@ -89,21 +89,25 @@ fn handle_morph(
 
     let normal = (current_player.1.translation - target.1.translation).normalize_or_zero();
 
-    commands.spawn((
-        TrailParticleEmitter {
-            following: target.0,
-        },
-        TransformTween::<()> {
-            reference: *current_player.1,
-            target: *target.1,
-            duration: Duration::from_millis(500),
-            ..default()
-        },
-        DespawnOnTime::new(Duration::from_millis(900)),
-        ParticleEffect::new((&**magic_effect).clone()),
-        EffectProperties::default()
-            .with_properties([(String::from("normal"), VectorValue::new_vec3(normal).into())]),
-    ));
+    let entity = commands
+        .spawn((
+            TrailParticleEmitter {
+                following: target.0,
+            },
+            TransformTween::<()> {
+                reference: *current_player.1,
+                target: *target.1,
+                duration: Duration::from_millis(500),
+                ..default()
+            },
+            // DespawnOnTime::new(Duration::from_millis(900)),
+            ParticleEffect::new((&**magic_effect).clone()),
+            EffectProperties::default()
+                .with_properties([(String::from("normal"), VectorValue::new_vec3(normal).into())]),
+        ))
+        .id();
+
+    commands.delayed().secs(0.9).entity(entity).despawn();
 
     commands.entity(camera.0).insert(CameraTween {
         reference: camera.1.clone(),
@@ -144,6 +148,7 @@ fn retarget(
     raycaster: SpatialQuery,
     camera: Single<&Transform, With<CurrentCamera>>,
     old_target: Option<Single<Entity, With<PropTarget>>>,
+    _: Single<(), (Without<MorphColddown>, With<LocalPlayer>)>,
 ) {
     let Some(hit) = raycaster.cast_ray(
         camera.translation,

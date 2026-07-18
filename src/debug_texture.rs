@@ -33,23 +33,17 @@ pub fn uv_debug_texture() -> Image {
     )
 }
 
-pub fn spawn_debug_texture(
-    image: Handle<Image>,
-    materials: &mut Assets<StandardMaterial>,
-) -> Handle<StandardMaterial> {
-    materials.add(StandardMaterial {
+pub fn spawn_debug_texture(image: Handle<Image>) -> StandardMaterial {
+    StandardMaterial {
         base_color_texture: Some(image),
         ..Default::default()
-    })
+    }
 }
 
 pub type DebugMaterial = ExtendedMaterial<StandardMaterial, HoverExtension>;
 
-pub fn spawn_hoverable_debug_texture(
-    image: Handle<Image>,
-    materials: &mut Assets<DebugMaterial>,
-) -> Handle<DebugMaterial> {
-    materials.add(DebugMaterial {
+pub fn spawn_hoverable_debug_texture(image: Handle<Image>) -> DebugMaterial {
+    DebugMaterial {
         base: StandardMaterial {
             base_color_texture: Some(image),
             ..Default::default()
@@ -58,7 +52,7 @@ pub fn spawn_hoverable_debug_texture(
             is_active: false,
             trans_start: 0.,
         },
-    })
+    }
 }
 
 const HOVER_EXTENSION_SHADER: &str = "shaders/hover_extension.wgsl";
