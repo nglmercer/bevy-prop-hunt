@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use avian3d::prelude::{CollisionLayers, SpatialQuery, SpatialQueryFilter};
-use bevy::color::palettes::css::BLUE;
 use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
 use bevy::input::common_conditions::input_just_pressed;
@@ -12,6 +11,7 @@ use crate::cameras::tween::{CameraSystemsSet, CameraTween};
 use crate::cameras::{CameraMode, CurrentCamera, PlayerCamera};
 use crate::client::particles::emitters::trail::TrailParticleEmitter;
 use crate::client::particles::magic::MagicParticleEffect;
+use crate::debug_texture::DebugMaterial;
 use crate::physics::PhysicsLayers;
 use crate::shared::timed::DespawnOnTime;
 use crate::shared::tween::TransformTween;
@@ -163,33 +163,39 @@ fn retarget(
 }
 
 fn hightlight_target(mut world: DeferredWorld, ctx: HookContext) {
-    let Some(material) = world.get::<MeshMaterial3d<StandardMaterial>>(ctx.entity) else {
+    let Some(material) = world.get::<MeshMaterial3d<DebugMaterial>>(ctx.entity) else {
         return;
     };
 
     let handle = material.id();
 
-    let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
+    let trans_start = world.resource::<Time>().elapsed_secs_wrapped();
+
+    let mut materials = world.resource_mut::<Assets<DebugMaterial>>();
 
     let Some(mut m) = materials.get_mut(handle) else {
         return;
     };
 
-    m.base_color = BLUE.into();
+    m.extension.is_active = true;
+    m.extension.trans_start = trans_start;
 }
 
 fn unhightlight_target(mut world: DeferredWorld, ctx: HookContext) {
-    let Some(material) = world.get::<MeshMaterial3d<StandardMaterial>>(ctx.entity) else {
+    let Some(material) = world.get::<MeshMaterial3d<DebugMaterial>>(ctx.entity) else {
         return;
     };
 
     let handle = material.id();
 
-    let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
+    let trans_start = world.resource::<Time>().elapsed_secs_wrapped();
+
+    let mut materials = world.resource_mut::<Assets<DebugMaterial>>();
 
     let Some(mut m) = materials.get_mut(handle) else {
         return;
     };
 
-    m.base_color = Color::WHITE;
+    m.extension.is_active = false;
+    m.extension.trans_start = trans_start;
 }

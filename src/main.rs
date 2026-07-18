@@ -5,7 +5,9 @@ use bevy_hanabi::HanabiPlugin;
 use bevy_tweening::TweeningPlugin;
 
 use self::cameras::{CameraMode, CurrentCamera, FreeCamera, PlayerCamera};
-use self::debug_texture::{spawn_debug_texture, uv_debug_texture};
+use self::debug_texture::{
+    DebugMaterial, spawn_debug_texture, spawn_hoverable_debug_texture, uv_debug_texture,
+};
 use self::opacity::OpacityPlugin;
 use self::pause_menu::Pause;
 use self::physics::PhysicsLayers;
@@ -28,6 +30,7 @@ fn main() -> AppExit {
     App::new()
         .add_plugins((
             DefaultPlugins.set(ImagePlugin::default_nearest()),
+            MaterialPlugin::<DebugMaterial>::default(),
             TweeningPlugin,
             PhysicsPlugins::default(),
             FeathersPlugins,
@@ -49,7 +52,8 @@ fn main() -> AppExit {
 fn test_scene(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut materials: ResMut<Assets<DebugMaterial>>,
+    mut sd_materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let image = images.add(uv_debug_texture());
 
@@ -71,7 +75,7 @@ fn test_scene(
         template_value(RigidBody::Static)
         template_value(Collider::cuboid(100., 0.5, 100.))
         Mesh3d(asset_value(Plane3d::new(Vec3::Y, Vec2::splat(50.))))
-        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut materials)})
+        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut sd_materials)})
         CollisionLayers {
             memberships: PhysicsLayers::Map,
         }
@@ -108,7 +112,7 @@ fn test_scene(
         Transform {
             translation: Vec3::new(0., 2., -5.),
         }
-        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut materials)})
+        MeshMaterial3d<DebugMaterial>({spawn_hoverable_debug_texture(image.clone(), &mut materials)})
         CollisionLayers {
             memberships: PhysicsLayers::Player,
         }
@@ -120,7 +124,7 @@ fn test_scene(
         Transform {
             translation: Vec3::new(-10., 2., -5.),
         }
-        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut materials)})
+        MeshMaterial3d<DebugMaterial>({spawn_hoverable_debug_texture(image.clone(), &mut materials)})
         CollisionLayers {
             memberships: PhysicsLayers::Prop,
         }
@@ -132,7 +136,7 @@ fn test_scene(
         Transform {
             translation: Vec3::new(10., 2., -5.),
         }
-        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut materials)})
+        MeshMaterial3d<DebugMaterial>({spawn_hoverable_debug_texture(image.clone(), &mut materials)})
         CollisionLayers {
             memberships: PhysicsLayers::Prop,
         }
