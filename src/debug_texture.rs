@@ -99,7 +99,7 @@ impl AsBindGroup for HoverExtension {
         buffer
             .write(&HoverExtensionBinding {
                 is_active: &(self.is_active as u32),
-                trans_start: &self.trans_start
+                trans_start: &self.trans_start,
             })
             .expect("is_active buffer write");
 

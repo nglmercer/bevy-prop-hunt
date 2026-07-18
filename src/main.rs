@@ -45,39 +45,23 @@ fn main() -> AppExit {
         ))
         .init_state::<GameState>()
         .insert_state(CameraMode::Playing)
-        .add_systems(Startup, test_scene)
+        .add_systems(
+            Startup,
+            (
+                cameras.spawn(),
+                client::ui::crosshair::crosshair.spawn(),
+                test_scene,
+            )
+                .chain(),
+        )
         .run()
 }
 
-fn test_scene(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-    mut materials: ResMut<Assets<DebugMaterial>>,
-    mut sd_materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let image = images.add(uv_debug_texture());
-
-    commands.queue_spawn_scene_list(bsn_list! [
+fn cameras() -> impl SceneList {
+    bsn_list! {
         Camera2d
         Camera {
             order: 10,
-        }
-        ,
-        Node {
-            width: px(2),
-            height: px(2),
-            justify_self: JustifySelf::Center,
-            align_self: AlignSelf::Center
-        }
-        BackgroundColor(Color::WHITE)
-        ,
-        #Floor
-        template_value(RigidBody::Static)
-        template_value(Collider::cuboid(100., 0.5, 100.))
-        Mesh3d(asset_value(Plane3d::new(Vec3::Y, Vec2::splat(50.))))
-        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut sd_materials)})
-        CollisionLayers {
-            memberships: PhysicsLayers::Map,
         }
         ,
         #PlayerCamera
@@ -92,7 +76,7 @@ fn test_scene(
             ..default()
         })
         ,
-        #DebugCamera
+        #FreeCamera
         FreeCamera
         Camera3d
         Camera {
@@ -102,6 +86,26 @@ fn test_scene(
             fov: 80_f32.to_radians(),
             ..default()
         })
+    }
+}
+
+fn test_scene(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<DebugMaterial>>,
+    mut sd_materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let image = images.add(uv_debug_texture());
+
+    commands.spawn_scene_list(bsn_list! [
+        #Floor
+        template_value(RigidBody::Static)
+        template_value(Collider::cuboid(100., 0.5, 100.))
+        Mesh3d(asset_value(Plane3d::new(Vec3::Y, Vec2::splat(50.))))
+        MeshMaterial3d<StandardMaterial>({spawn_debug_texture(image.clone(), &mut sd_materials)})
+        CollisionLayers {
+            memberships: PhysicsLayers::Map,
+        }
         ,
         #Player
         Player

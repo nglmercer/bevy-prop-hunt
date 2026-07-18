@@ -3,6 +3,7 @@ use std::time::Duration;
 use avian3d::prelude::{CollisionLayers, SpatialQuery, SpatialQueryFilter};
 use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
+use bevy::gizmos::cross;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy_hanabi::{EffectProperties, ParticleEffect, VectorValue};
@@ -11,6 +12,7 @@ use crate::cameras::tween::{CameraSystemsSet, CameraTween};
 use crate::cameras::{CameraMode, CurrentCamera, PlayerCamera};
 use crate::client::particles::emitters::trail::TrailParticleEmitter;
 use crate::client::particles::magic::MagicParticleEffect;
+use crate::client::ui::crosshair::Crosshair;
 use crate::debug_texture::DebugMaterial;
 use crate::physics::PhysicsLayers;
 use crate::shared::timed::DespawnOnTime;
@@ -116,13 +118,19 @@ pub struct MorphColddown(pub Duration);
 fn update_colddown(
     mut commands: Commands,
     time: Res<Time>,
-    mut colddowns: Query<(Entity, &mut MorphColddown)>,
+    mut crosshair: ResMut<Crosshair>,
+    mut colddowns: Query<(Entity, &mut MorphColddown, Has<LocalPlayer>)>,
 ) {
-    for (entity, mut colddown) in colddowns.iter_mut() {
+    for (entity, mut colddown, is_player) in colddowns.iter_mut() {
         colddown.0 = colddown.0.saturating_sub(time.delta());
 
         if colddown.0.is_zero() {
             commands.entity(entity).remove::<MorphColddown>();
+            if is_player {
+                crosshair.bottom_loader = None;
+            }
+        } else if is_player {
+            crosshair.bottom_loader = Some(colddown.0.as_secs_f32());
         }
     }
 }
