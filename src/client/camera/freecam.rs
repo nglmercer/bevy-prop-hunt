@@ -6,14 +6,14 @@ use bevy::camera_controller::free_camera::{
 use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
 
-use crate::pause_menu::PauseState;
-use crate::states::GameState;
+use crate::client::pause_menu::PauseState;
+use crate::client::states::ClientState;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
         RunFixedMainLoop,
         (
-            run_freecamera_controller.run_if(in_state(GameState::Running)),
+            run_freecamera_controller.run_if(in_state(ClientState::Running)),
             rotate_freecam_to.run_if(not(in_state(PauseState::Paused))),
         )
             .chain()

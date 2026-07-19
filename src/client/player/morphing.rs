@@ -7,17 +7,16 @@ use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy_hanabi::{EffectProperties, ParticleEffect, VectorValue};
 
-use crate::cameras::tween::{CameraSystemsSet, CameraTween};
-use crate::cameras::{CameraMode, CurrentCamera, PlayerCamera};
+use crate::client::camera::tween::{CameraSystemsSet, CameraTween};
+use crate::client::camera::{CameraMode, CurrentCamera, PlayerCamera};
+use crate::client::debug_texture::DebugMaterial;
 use crate::client::particles::emitters::trail::TrailParticleEmitter;
 use crate::client::particles::magic::MagicParticleEffect;
+use crate::client::states::ClientState;
 use crate::client::ui::crosshair::Crosshair;
-use crate::debug_texture::DebugMaterial;
-use crate::physics::PhysicsLayers;
-use crate::shared::tween::TransformTween;
-use crate::states::GameState;
-
-use super::{LocalPlayer, Player};
+use crate::shared::physics::PhysicsLayers;
+use crate::shared::player::{LocalPlayer, Player};
+use crate::utils::tween::TransformTween;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -34,7 +33,7 @@ pub(super) fn plugin(app: &mut App) {
                 .run_if(in_state(CameraMode::Playing))
                 .run_if(input_just_pressed(MouseButton::Left)),
         )
-            .run_if(in_state(GameState::Running)),
+            .run_if(in_state(ClientState::Running)),
     );
 }
 

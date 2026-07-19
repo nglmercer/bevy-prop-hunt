@@ -6,7 +6,7 @@ use std::time::Duration;
 use bevy::ecs::component::{Mutable, StorageType};
 use bevy::prelude::*;
 
-use crate::lenses::smooth_transform_lerp;
+use crate::utils::lenses::smooth_transform_lerp;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, update_tween::<()>);

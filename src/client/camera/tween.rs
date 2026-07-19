@@ -4,9 +4,9 @@ use avian3d::prelude::{Collider, PhysicsSystems, SpatialQuery, SpatialQueryFilte
 use bevy::color::palettes::css::RED;
 use bevy::prelude::*;
 
-use crate::physics::PhysicsLayers;
-use crate::player::LocalPlayer;
-use crate::shared::tween::{self, TransformTween};
+use crate::shared::physics::PhysicsLayers;
+use crate::shared::player::LocalPlayer;
+use crate::utils::tween::{self, TransformTween};
 
 use super::{CameraMode, FreeCamera, PlayerCamera};
 

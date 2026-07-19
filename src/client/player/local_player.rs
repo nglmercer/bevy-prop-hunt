@@ -3,18 +3,17 @@ use avian3d::prelude::*;
 use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
 
-use crate::cameras::CameraMode;
-use crate::cameras::PlayerCamera;
-use crate::cameras::RADIANS_PER_DOT;
-use crate::states::GameState;
-
-use super::LocalPlayer;
+use crate::client::{
+    camera::{CameraMode, PlayerCamera, RADIANS_PER_DOT},
+    states::ClientState,
+};
+use crate::shared::player::LocalPlayer;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
         RunFixedMainLoop,
         (move_player, update_look)
-            .run_if(in_state(CameraMode::Playing).and_then(in_state(GameState::Running))),
+            .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),
     );
 }
 

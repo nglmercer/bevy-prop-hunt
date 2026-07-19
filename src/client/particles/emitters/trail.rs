@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_hanabi::EffectProperties;
 
-use crate::shared::tween::{TransformTween, update_tween};
+use crate::utils::tween::{TransformTween, update_tween};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, update_emitter.before(update_tween::<()>));

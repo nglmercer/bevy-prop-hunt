@@ -40,7 +40,7 @@ pub fn crosshair() -> impl SceneList {
         }
         Children [
             BottomLoader
-            Mesh2d(asset_value(crosshair_ring(1.)))
+            Mesh2d(asset_value(crosshair_ring(0.)))
             MeshMaterial2d<ColorMaterial>(asset_value(Color::WHITE))
         ]
 

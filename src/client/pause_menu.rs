@@ -13,9 +13,8 @@ use bevy_tweening::Tween;
 use bevy_tweening::TweenAnim;
 use bevy_tweening::lens::UiPositionLens;
 
-use crate::lenses::FadeLens;
-use crate::opacity::Opacity;
-use crate::states::GameState;
+use crate::client::states::ClientState;
+use crate::utils::{lenses::FadeLens, opacity::Opacity};
 
 pub fn plugin(app: &mut App) {
     app.insert_resource(UiTheme(create_dark_theme()))
@@ -113,7 +112,7 @@ fn hide_pause(
     }
 
     commands.set_state(PauseState::Transition);
-    commands.set_state(GameState::Running);
+    commands.set_state(ClientState::Running);
 
     commands
         .delayed()
@@ -151,7 +150,7 @@ fn show_pause(
     }
 
     commands.set_state(PauseState::Transition);
-    commands.set_state(GameState::Paused);
+    commands.set_state(ClientState::Paused);
 
     commands
         .delayed()

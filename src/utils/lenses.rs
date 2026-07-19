@@ -2,7 +2,7 @@ use bevy::ecs::component::Mutable;
 use bevy::prelude::*;
 use bevy_tweening::{AnimTarget, IntoBoxedTweenable, Lens, TweenAnim};
 
-use crate::opacity::Opacity;
+use crate::utils::opacity::Opacity;
 
 pub trait TweenCommands {
     fn tween_component<C: Component<Mutability = Mutable> + 'static>(

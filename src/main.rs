@@ -1,126 +1,59 @@
 use std::f32::consts::TAU;
 
 use avian3d::prelude::*;
-use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
-use bevy_hanabi::HanabiPlugin;
 use bevy_tweening::TweeningPlugin;
 
-use self::cameras::{CameraMode, CurrentCamera, FreeCamera, PlayerCamera};
-use self::debug_texture::{
-    DebugMaterial, spawn_debug_texture, spawn_hoverable_debug_texture, uv_debug_texture,
-};
-use self::opacity::OpacityPlugin;
-use self::pause_menu::Pause;
-use self::physics::PhysicsLayers;
-use self::player::{LocalPlayer, Player};
-use self::states::GameState;
+use self::shared::cosmetic_data::CosmeticData;
+use self::shared::physics::PhysicsLayers;
+use self::shared::player::{LocalPlayer, Player};
 
-mod cameras;
 mod client;
-mod debug_texture;
-mod lenses;
-mod opacity;
-mod pause_menu;
-mod physics;
-mod player;
+mod server;
 mod shared;
-mod states;
-mod templates;
+mod utils;
 
 fn main() -> AppExit {
     App::new()
         .add_plugins((
             DefaultPlugins.set(ImagePlugin::default_nearest()),
-            MaterialPlugin::<DebugMaterial>::default(),
             TweeningPlugin,
             PhysicsPlugins::default(),
-            FeathersPlugins,
-            OpacityPlugin,
-            HanabiPlugin,
-            cameras::plugins,
-            player::plugins,
-            pause_menu::plugin,
-            client::plugins,
-            shared::timed::plugin,
-            shared::tween::plugin,
+            client::plugin,
+            utils::tween::plugin,
         ))
-        .init_state::<GameState>()
-        .insert_state(CameraMode::Playing)
-        .add_systems(
-            Startup,
-            (
-                cameras.spawn(),
-                client::ui::crosshair::crosshair.spawn(),
-                test_scene,
-            )
-                .chain(),
-        )
+        .add_systems(Startup, test_scene)
         .run()
 }
 
-fn cameras() -> impl SceneList {
-    bsn_list! {
-        Camera2d
-        Camera {
-            order: 10,
-        }
-        ,
-        #FreeCamera
-        FreeCamera
-        Camera3d
-        Camera {
-            is_active: false
-        }
-        Projection::from(PerspectiveProjection {
-            fov: 80_f32.to_radians(),
-            ..default()
-        })
-        ,
-        #PlayerCamera
-        PlayerCamera
-        CurrentCamera
-        Transform {
-            translation: Vec3::new(0., 6., 5.),
-        }
-        Camera3d
-        Projection::from(PerspectiveProjection {
-            fov: 80_f32.to_radians(),
-            ..default()
-        })
-    }
-}
+fn test_scene(mut commands: Commands) {
+    // let image = images.add(uv_debug_texture());
 
-fn test_scene(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
-    let image = images.add(uv_debug_texture());
-
-    fn wall(x: f32, y: f32, image: Handle<Image>) -> impl Scene {
+    fn wall(x: f32, y: f32) -> impl Scene {
         bsn! {
             template_value(RigidBody::Static)
             template_value(Collider::cuboid(200. * y.abs() + 0.2, 20., 200. * x.abs() + 0.2))
-            Mesh3d(asset_value(Plane3d::new(vec3(x, 0., y), vec2(90. * y.abs() + 10., 90. * x.abs() + 10.))))
+            @CosmeticData<false> {
+                @layer: PhysicsLayers::Map,
+                shape: asset_value(Plane3d::new(vec3(x, 0., y), vec2(90. * y.abs() + 10., 90. * x.abs() + 10.))),
+            }
             Transform {
                 translation: vec3(-100. * x, 10., -100. * y),
                 rotation: {Quat::from_rotation_y(y * TAU)}
             }
-            MeshMaterial3d<StandardMaterial>(asset_value(spawn_debug_texture(image)))
-            CollisionLayers {
-                memberships: PhysicsLayers::Map,
-            }
         }
     }
 
-    fn prop(collider: Collider, mesh: impl Into<Mesh>, image: Handle<Image>) -> impl Scene {
+    fn prop(collider: Collider, mesh: impl Into<Mesh>) -> impl Scene {
         bsn! {
             template_value(RigidBody::Dynamic)
             template_value(collider)
-            Mesh3d(asset_value(mesh))
-            MeshMaterial3d<DebugMaterial>(asset_value(spawn_hoverable_debug_texture(image)))
-            CollisionLayers {
-                memberships: PhysicsLayers::Prop,
+            @CosmeticData<true> {
+                @layer: PhysicsLayers::Prop,
+                shape: asset_value(mesh)
             }
             Transform {
-                translation: Vec3::new(rand::random_range(-20.0..20.0), 5., rand::random_range(-20.0..20.0)),
+                translation: Vec3::new(rand::random_range(-70.0..70.0), 5., rand::random_range(-70.0..70.0)),
             }
         }
     }
@@ -129,46 +62,37 @@ fn test_scene(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         #Floor
         template_value(RigidBody::Static)
         template_value(Collider::cuboid(200., 0.5, 200.))
-        Mesh3d(asset_value(Plane3d::new(Vec3::Y, Vec2::splat(100.))))
-        MeshMaterial3d<StandardMaterial>(asset_value(spawn_debug_texture(image.clone())))
+        @CosmeticData<false> {
+            @layer: PhysicsLayers::Map,
+            shape: asset_value(Plane3d::new(Vec3::Y, Vec2::splat(100.)))
+        }
         CollisionLayers {
             memberships: PhysicsLayers::Map,
         }
         ,
-        wall(1., 0., image.clone()),
-        wall(-1., 0., image.clone()),
-        wall(0., 1., image.clone()),
-        wall(0., -1., image.clone()),
+        wall(1., 0.),
+        wall(-1., 0.),
+        wall(0., 1.),
+        wall(0., -1.),
 
         #Player
         Player
         LocalPlayer
         template_value(RigidBody::Dynamic)
         template_value(Collider::capsule(1., 2.))
-        Mesh3d(asset_value(Capsule3d::new(1., 2.)))
+        @CosmeticData<true> {
+            @layer: PhysicsLayers::Player,
+            shape: asset_value(Capsule3d::new(1., 2.))
+        }
         Transform {
             translation: Vec3::new(0., 2., -5.),
         }
-        MeshMaterial3d<DebugMaterial>(asset_value(spawn_hoverable_debug_texture(image.clone())))
-        CollisionLayers {
-            memberships: PhysicsLayers::Player,
-        }
         ,
-        prop(Collider::capsule(1., 2.), Capsule3d::new(1., 2.), image.clone()),
-        prop(Collider::capsule(1., 2.), Capsule3d::new(1., 2.), image.clone()),
-        prop(Collider::capsule(1., 2.), Capsule3d::new(1., 2.), image.clone()),
-        prop(Collider::capsule(1., 2.), Capsule3d::new(1., 2.), image.clone()),
-
-        prop(Collider::cone(1., 2.), Cone::new(1., 2.), image.clone()),
-        prop(Collider::cone(1., 2.), Cone::new(1., 2.), image.clone()),
-        prop(Collider::cone(1., 2.), Cone::new(1., 2.), image.clone()),
-        prop(Collider::cone(1., 2.), Cone::new(1., 2.), image.clone()),
-
-        prop(Collider::cuboid(2., 2., 2.), Cuboid::new(2., 2., 2.), image.clone()),
-        prop(Collider::cuboid(2., 2., 2.), Cuboid::new(2., 2., 2.), image.clone()),
-        prop(Collider::cuboid(2., 2., 2.), Cuboid::new(2., 2., 2.), image.clone()),
-        prop(Collider::cuboid(2., 2., 2.), Cuboid::new(2., 2., 2.), image.clone()),
     ]);
 
-    commands.trigger(Pause);
+    for _ in 0..10 {
+        commands.spawn_scene(prop(Collider::capsule(1., 2.), Capsule3d::new(1., 2.)));
+        commands.spawn_scene(prop(Collider::cone(1., 2.), Cone::new(1., 2.)));
+        commands.spawn_scene(prop(Collider::cuboid(2., 2., 2.), Cuboid::new(2., 2., 2.)));
+    }
 }

@@ -5,12 +5,11 @@ use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy_tweening::{AnimCompletedEvent, Tween};
 
-use crate::cameras::{CameraMode, CurrentCamera};
-use crate::lenses::{SmoothTransformLens, TweenCommands};
-use crate::states::GameState;
+use crate::client::states::ClientState;
+use crate::utils::lenses::{SmoothTransformLens, TweenCommands};
 
 use super::tween::CameraTween;
-use super::{FreeCamera, PlayerCamera};
+use super::{CameraMode, CurrentCamera, FreeCamera, PlayerCamera};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -19,7 +18,7 @@ pub fn plugin(app: &mut App) {
             enable_freecam.run_if(in_state(CameraMode::Playing)),
             disable_freecam.run_if(in_state(CameraMode::Freecam)),
         )
-            .run_if(in_state(GameState::Running).and_then(input_just_pressed(KeyCode::Tab))),
+            .run_if(in_state(ClientState::Running).and_then(input_just_pressed(KeyCode::Tab))),
     );
 }
 

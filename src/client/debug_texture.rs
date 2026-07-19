@@ -4,6 +4,9 @@ use bevy::prelude::*;
 use bevy::render::render_resource::encase::UniformBuffer;
 use bevy::render::render_resource::*;
 
+#[derive(Resource)]
+pub struct DebugTexture(pub Handle<Image>);
+
 /// Creates a colorful test pattern
 pub fn uv_debug_texture() -> Image {
     const TEXTURE_SIZE: usize = 8;
@@ -33,7 +36,7 @@ pub fn uv_debug_texture() -> Image {
     )
 }
 
-pub fn spawn_debug_texture(image: Handle<Image>) -> StandardMaterial {
+pub fn texture_material(image: Handle<Image>) -> StandardMaterial {
     StandardMaterial {
         base_color_texture: Some(image),
         ..Default::default()
@@ -42,12 +45,9 @@ pub fn spawn_debug_texture(image: Handle<Image>) -> StandardMaterial {
 
 pub type DebugMaterial = ExtendedMaterial<StandardMaterial, HoverExtension>;
 
-pub fn spawn_hoverable_debug_texture(image: Handle<Image>) -> DebugMaterial {
+pub fn hoverable_texture_material(image: Handle<Image>) -> DebugMaterial {
     DebugMaterial {
-        base: StandardMaterial {
-            base_color_texture: Some(image),
-            ..Default::default()
-        },
+        base: texture_material(image),
         extension: HoverExtension {
             is_active: false,
             trans_start: 0.,
