@@ -1,4 +1,4 @@
-use std::f32::consts::{FRAC_PI_2, PI, TAU};
+use std::f32::consts::TAU;
 
 use avian3d::prelude::*;
 use bevy::feathers::FeathersPlugins;
@@ -66,6 +66,17 @@ fn cameras() -> impl SceneList {
             order: 10,
         }
         ,
+        #FreeCamera
+        FreeCamera
+        Camera3d
+        Camera {
+            is_active: false
+        }
+        Projection::from(PerspectiveProjection {
+            fov: 80_f32.to_radians(),
+            ..default()
+        })
+        ,
         #PlayerCamera
         PlayerCamera
         CurrentCamera
@@ -73,17 +84,6 @@ fn cameras() -> impl SceneList {
             translation: Vec3::new(0., 6., 5.),
         }
         Camera3d
-        Projection::from(PerspectiveProjection {
-            fov: 80_f32.to_radians(),
-            ..default()
-        })
-        ,
-        #FreeCamera
-        FreeCamera
-        Camera3d
-        Camera {
-            is_active: false
-        }
         Projection::from(PerspectiveProjection {
             fov: 80_f32.to_radians(),
             ..default()
@@ -103,9 +103,9 @@ fn test_scene(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                 translation: vec3(-100. * x, 10., -100. * y),
                 rotation: {Quat::from_rotation_y(y * TAU)}
             }
-            MeshMaterial3d<DebugMaterial>(asset_value(spawn_hoverable_debug_texture(image)))
+            MeshMaterial3d<StandardMaterial>(asset_value(spawn_debug_texture(image)))
             CollisionLayers {
-                memberships: PhysicsLayers::Prop,
+                memberships: PhysicsLayers::Map,
             }
         }
     }

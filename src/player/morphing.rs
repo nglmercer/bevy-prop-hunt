@@ -3,7 +3,6 @@ use std::time::Duration;
 use avian3d::prelude::{CollisionLayers, SpatialQuery, SpatialQueryFilter};
 use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
-use bevy::gizmos::cross;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy_hanabi::{EffectProperties, ParticleEffect, VectorValue};
@@ -15,7 +14,6 @@ use crate::client::particles::magic::MagicParticleEffect;
 use crate::client::ui::crosshair::Crosshair;
 use crate::debug_texture::DebugMaterial;
 use crate::physics::PhysicsLayers;
-use crate::shared::timed::DespawnOnTime;
 use crate::shared::tween::TransformTween;
 use crate::states::GameState;
 
@@ -146,14 +144,14 @@ pub struct PropTarget;
 fn retarget(
     mut commands: Commands,
     raycaster: SpatialQuery,
-    camera: Single<&Transform, With<CurrentCamera>>,
+    camera: Single<(&Transform, &PlayerCamera), With<CurrentCamera>>,
     old_target: Option<Single<Entity, With<PropTarget>>>,
     _: Single<(), (Without<MorphColddown>, With<LocalPlayer>)>,
 ) {
     let Some(hit) = raycaster.cast_ray(
-        camera.translation,
-        camera.forward(),
-        50.,
+        camera.0.translation + camera.0.forward() * camera.1.player_distance,
+        camera.0.forward(),
+        40.,
         false,
         &SpatialQueryFilter::default().with_mask(PhysicsLayers::Prop),
     ) else {

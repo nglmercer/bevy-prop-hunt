@@ -16,6 +16,7 @@ pub struct PlayerCamera {
     pub pitch: f32,
     pub rot: Quat,
     pub target_pos: Vec3,
+    pub player_distance: f32,
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -88,13 +88,5 @@ fn calc_point(t: f32, a: f32, uv: vec2<f32>) -> f32 {
     return tanh(
         pow(abs(sin(uv.y * 3.14159 + a)) * 7, -1)
         + pow(abs(cos(uv.x * 3.14159 + a + cos(a))) * 7, -1)
-        // +
-        // max(0, 1 - sqrt(pow((uv.x - t) * 3, 2) + pow((uv.y - t) * 3, 2)))
-        // +
-        // max(0, 1 - sqrt(pow((uv.x - 0.5) * 3, 2) + pow((uv.y - t) * 3, 2)))
-        // +
-        // max(0, 1 - sqrt(pow((uv.x - t) * 3, 2) + pow((uv.y - 0.5) * 3, 2)))
-        // +
-        // max(0, 1 - sqrt(pow((t - uv.x) * 3, 3) + pow((uv.y - 0.5) * 3, 3)))
     ) * 0.75;
 }

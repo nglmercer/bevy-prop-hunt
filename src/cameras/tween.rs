@@ -1,6 +1,7 @@
 use avian3d::math::Dir;
 use avian3d::parry::math::Pose3;
 use avian3d::prelude::{Collider, PhysicsSystems, SpatialQuery, SpatialQueryFilter};
+use bevy::color::palettes::css::RED;
 use bevy::prelude::*;
 
 use crate::physics::PhysicsLayers;
@@ -31,6 +32,7 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 fn update_player_camera(
+    mut gizmos: Gizmos,
     raycaster: SpatialQuery,
     cam_mode: Res<State<CameraMode>>,
     mut camera: Single<&mut PlayerCamera>,
@@ -63,18 +65,28 @@ fn update_player_camera(
         return;
     };
 
-    let Some(hit_data) = raycaster.cast_ray(
+    let hit_data = raycaster.cast_ray(
         base_pos,
         dir,
         length,
         false,
         &SpatialQueryFilter::default().with_mask(PhysicsLayers::Map),
-    ) else {
-        camera.target_pos = target_pos;
-        return;
+    );
+
+    let (target_pos, player_distance) = match hit_data {
+        Some(hit_data) => (base_pos + dir * hit_data.distance, hit_data.distance),
+        None => (
+            target_pos,
+            vec3(base_pos.x, camera.target_pos.y, base_pos.z).distance(target_pos),
+        ),
     };
 
-    camera.target_pos = base_pos + dir * hit_data.distance;
+    if *cam_mode.get() == CameraMode::Freecam {
+        gizmos.sphere(target_pos, 0.5, RED);
+    }
+
+    camera.target_pos = target_pos;
+    camera.player_distance = player_distance;
 }
 
 fn update_fixed_player_camera(
