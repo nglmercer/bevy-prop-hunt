@@ -22,7 +22,8 @@ fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     camera: Single<&PlayerCamera>,
-    mut player: Single<&mut LinearVelocity, With<LocalPlayer>>,
+    raycast: SpatialQuery,
+    mut player: Single<(Entity, &Transform, &mut LinearVelocity, &Collider), With<LocalPlayer>>,
 ) {
     let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
     let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
@@ -37,12 +38,31 @@ fn move_player(
     let delta_secs = time.delta_secs();
 
     if direction != Vector2::ZERO {
-        player.x += direction.x * 50. * delta_secs;
-        player.z -= direction.y * 50. * delta_secs;
+        player.2.x += direction.x * 50. * delta_secs;
+        player.2.z -= direction.y * 50. * delta_secs;
+
+        let out = player.2.xz().clamp_length_max(20.);
+        player.2.x = out.x;
+        player.2.z = out.y;
     }
 
     if keyboard_input.just_pressed(KeyCode::Space) {
-        player.y = 7.;
+        let hit_data = raycast.cast_shape(
+            player.3,
+            player.1.translation,
+            player.1.rotation,
+            Dir3::NEG_Y,
+            &ShapeCastConfig {
+                max_distance: 0.1,
+                compute_contact_on_penetration: false,
+                ..default()
+            },
+            &SpatialQueryFilter::default().with_excluded_entities([player.0]),
+        );
+
+        if hit_data.is_some() {
+            player.2.y = 10.;
+        }
     }
 }
 
