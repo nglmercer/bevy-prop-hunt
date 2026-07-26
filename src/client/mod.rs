@@ -3,12 +3,18 @@ use std::net::{Ipv4Addr, SocketAddr};
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_hanabi::HanabiPlugin;
+use bevy_inspector_egui::bevy_egui::{
+    EguiContext, EguiGlobalSettings, EguiPlugin, PrimaryEguiContext,
+};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use lightyear::prelude::client::ClientPlugins;
 use lightyear::prelude::*;
 use lightyear::steam::client::SteamClientIo;
 
-use crate::shared::network::SERVER_PORT;
+use crate::shared::network::{LocalClient, SERVER_PORT};
 use crate::utils::opacity::OpacityPlugin;
+
+use self::states::ClientState;
 
 mod camera;
 mod debug_texture;
@@ -33,7 +39,13 @@ pub fn plugin(app: &mut bevy::app::App) {
         renderer::particles::plugin,
         ui::crosshair::plugin,
         ClientPlugins::default(),
+        EguiPlugin::default(),
+        WorldInspectorPlugin::new().run_if(in_state(ClientState::Paused)),
     ))
+    .insert_resource(EguiGlobalSettings {
+        auto_create_primary_context: false,
+        ..default()
+    })
     .init_state::<states::ClientState>()
     .insert_state(camera::CameraMode::Playing)
     .add_systems(Startup, (cameras.spawn(), ui::crosshair::crosshair.spawn()))
@@ -59,6 +71,8 @@ fn on_connect(ev: On<Connect>, mut commands: Commands) {
 
     let entity = commands
         .spawn((
+            Name::from("Local Client"),
+            LocalClient,
             Client::default(),
             PredictionManager::default(),
             Link::new(None),
@@ -80,6 +94,8 @@ fn cameras() -> impl SceneList {
         Camera {
             order: 10,
         }
+        EguiContext
+        PrimaryEguiContext
         ,
         #FreeCamera
         camera::FreeCamera

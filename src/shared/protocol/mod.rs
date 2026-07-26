@@ -12,7 +12,8 @@ pub fn plugin(app: &mut App) {
     particles::plugin(app);
 
     app.component::<Player>().replicate_once();
-    app.component::<Name>().replicate_once();
+    app.component::<Name>()
+        .replicate_once_filtered::<Without<Client>>();
 
     app.component::<CosmeticData<false>>().replicate_once();
     app.component::<CosmeticData<true>>().replicate_once();

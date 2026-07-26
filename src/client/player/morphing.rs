@@ -5,13 +5,14 @@ use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
-use lightyear::prelude::{MessageManager, NetworkTarget, RemoteId, Replicate};
+use lightyear::prelude::{MessageManager, NetworkTarget, Replicate};
 
 use crate::client::camera::tween::{CameraSystemsSet, CameraTween};
 use crate::client::camera::{CameraMode, CurrentCamera, PlayerCamera};
 use crate::client::debug_texture::DebugMaterial;
 use crate::client::states::ClientState;
 use crate::client::ui::crosshair::Crosshair;
+use crate::shared::network::LocalClient;
 use crate::shared::particles::MagicTrailParticles;
 use crate::shared::physics::PhysicsLayers;
 use crate::shared::player::{LocalPlayer, Player};
@@ -37,9 +38,9 @@ pub(super) fn plugin(app: &mut App) {
 
 fn handle_morph(
     mut commands: Commands,
-    message_manager: Single<&MessageManager, Without<RemoteId>>,
+    message_manager: Single<&MessageManager, With<LocalClient>>,
     current_player: Single<
-        (Entity, &Transform),
+        (Entity, &Transform, &Player),
         (
             With<LocalPlayer>,
             Without<MorphColddown>,
@@ -63,9 +64,18 @@ fn handle_morph(
     >,
 ) {
     commands
+        .entity(current_player.0)
+        .remove::<LocalPlayer>()
+        .remove::<Player>()
+        .insert(CollisionLayers {
+            memberships: PhysicsLayers::Prop.into(),
+            ..default()
+        });
+
+    commands
         .entity(target.0)
         .remove::<PropTarget>()
-        .insert(Player)
+        .insert(*current_player.2)
         .insert(LocalPlayer)
         .insert(MorphColddown(Duration::from_secs(1)))
         .insert(CollisionLayers {
@@ -80,15 +90,6 @@ fn handle_morph(
         },
         Replicate::to_clients(NetworkTarget::All),
     ));
-
-    commands
-        .entity(current_player.0)
-        .remove::<LocalPlayer>()
-        .remove::<Player>()
-        .insert(CollisionLayers {
-            memberships: PhysicsLayers::Prop.into(),
-            ..default()
-        });
 
     commands.entity(camera.0).insert(CameraTween {
         reference: camera.1.clone(),

@@ -22,3 +22,6 @@ pub fn plugin(app: &mut App) {
             .disable::<IslandSleepingPlugin>(),
     ));
 }
+
+#[derive(Component)]
+pub struct LocalClient;

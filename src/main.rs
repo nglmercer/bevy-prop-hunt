@@ -7,7 +7,6 @@ use lightyear::prelude::{InterpolationTarget, NetworkTarget, PredictionTarget, R
 
 use self::shared::cosmetic_data::{CosmeticData, CosmeticMesh};
 use self::shared::physics::PhysicsLayers;
-use self::shared::player::{LocalPlayer, Player};
 
 mod client;
 mod server;
@@ -24,17 +23,14 @@ fn main() -> AppExit {
             shared::network::plugin,
             shared::protocol::plugin,
             utils::tween::plugin,
-            bevy_inspector_egui::bevy_egui::EguiPlugin::default(),
-            bevy_inspector_egui::quick::WorldInspectorPlugin::new(),
         ))
         .run()
 }
 
 fn test_scene(mut commands: Commands) {
-    // let image = images.add(uv_debug_texture());
-
     fn wall(x: f32, y: f32) -> impl Scene {
         bsn! {
+            #Wall
             template_value(RigidBody::Static)
             template_value(Collider::cuboid(200. * y.abs() + 0.2, 20., 200. * x.abs() + 0.2))
             @CosmeticData<false> {
@@ -51,6 +47,7 @@ fn test_scene(mut commands: Commands) {
 
     fn prop(collider: Collider, shape: CosmeticMesh) -> impl Scene {
         bsn! {
+            #Prop
             template_value(RigidBody::Dynamic)
             template_value(collider)
             @CosmeticData<true> {
@@ -83,23 +80,6 @@ fn test_scene(mut commands: Commands) {
         wall(-1., 0.),
         wall(0., 1.),
         wall(0., -1.),
-
-        #Player
-        Player
-        LocalPlayer
-        template_value(RigidBody::Dynamic)
-        template_value(Collider::capsule(1., 2.))
-        @CosmeticData<true> {
-            @layer: PhysicsLayers::Player,
-            shape: CosmeticMesh::Capsule3d(1., 2.)
-        }
-        Transform {
-            translation: Vec3::new(0., 2., -5.),
-        }
-        template_value(Replicate::to_clients(NetworkTarget::All))
-        template_value(PredictionTarget::to_clients(NetworkTarget::All))
-        template_value(InterpolationTarget::to_clients(NetworkTarget::All))
-        ,
     ]);
 
     for _ in 0..10 {
