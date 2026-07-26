@@ -10,7 +10,7 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         lightyear::avian3d::plugin::LightyearAvianPlugin {
             replication_mode:
-                lightyear::avian3d::plugin::AvianReplicationMode::PositionButInterpolateTransform,
+                lightyear::avian3d::plugin::AvianReplicationMode::Position,
             ..default()
         },
         PhysicsPlugins::default()

@@ -59,6 +59,7 @@ fn on_connect(ev: On<Connect>, mut commands: Commands) {
     let entity = commands
         .spawn((
             Client::default(),
+            PredictionManager::default(),
             Link::new(None),
             LocalAddr(SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 0)),
             PeerAddr(server_addr),

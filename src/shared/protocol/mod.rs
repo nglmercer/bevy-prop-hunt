@@ -1,18 +1,18 @@
 use bevy::prelude::*;
-use lightyear::frame_interpolation::FrameInterpolationPlugin;
 use lightyear::prelude::*;
 
 use super::cosmetic_data::CosmeticData;
+use super::player::Player;
 
 mod physics;
 
 pub fn plugin(app: &mut App) {
     physics::plugin(app);
 
-    app.component::<CosmeticData<false>>().replicate();
-    app.component::<CosmeticData<true>>().replicate();
-    app.component::<Transform>()
-        .replicate_once();
+    app.component::<Player>().replicate_once();
+    app.component::<Name>().replicate_once();
 
-    app.add_plugins(FrameInterpolationPlugin::<Transform>::default());
+    app.component::<CosmeticData<false>>().replicate_once();
+    app.component::<CosmeticData<true>>().replicate_once();
+    app.component::<Transform>().replicate_once();
 }
