@@ -30,6 +30,7 @@ pub fn plugin(app: &mut bevy::app::App) {
         particles::plugins,
         pause_menu::plugin,
         renderer::cosmetic::plugin,
+        renderer::particles::plugin,
         ui::crosshair::plugin,
         ClientPlugins::default(),
     ))

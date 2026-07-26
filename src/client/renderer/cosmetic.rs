@@ -1,4 +1,3 @@
-use avian3d::prelude::Position;
 use bevy::prelude::*;
 use lightyear::frame_interpolation::FrameInterpolate;
 

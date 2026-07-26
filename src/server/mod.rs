@@ -66,7 +66,7 @@ fn on_client_connected(
         return;
     };
 
-    commands.entity(trigger.entity).insert((
+    commands.spawn((
         Player,
         RigidBody::Dynamic,
         Collider::capsule(1., 2.),

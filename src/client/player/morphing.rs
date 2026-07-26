@@ -5,18 +5,16 @@ use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
-use bevy_hanabi::{EffectProperties, ParticleEffect, VectorValue};
+use lightyear::prelude::{MessageManager, NetworkTarget, RemoteId, Replicate};
 
 use crate::client::camera::tween::{CameraSystemsSet, CameraTween};
 use crate::client::camera::{CameraMode, CurrentCamera, PlayerCamera};
 use crate::client::debug_texture::DebugMaterial;
-use crate::client::particles::emitters::trail::TrailParticleEmitter;
-use crate::client::particles::magic::MagicParticleEffect;
 use crate::client::states::ClientState;
 use crate::client::ui::crosshair::Crosshair;
+use crate::shared::particles::MagicTrailParticles;
 use crate::shared::physics::PhysicsLayers;
 use crate::shared::player::{LocalPlayer, Player};
-use crate::utils::tween::TransformTween;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -39,7 +37,7 @@ pub(super) fn plugin(app: &mut App) {
 
 fn handle_morph(
     mut commands: Commands,
-    magic_effect: Res<MagicParticleEffect>,
+    message_manager: Single<&MessageManager, Without<RemoteId>>,
     current_player: Single<
         (Entity, &Transform),
         (
@@ -75,6 +73,14 @@ fn handle_morph(
             ..default()
         });
 
+    commands.spawn((
+        MagicTrailParticles {
+            from: *current_player.1,
+            following: message_manager.entity_mapper.to_remote(target.0),
+        },
+        Replicate::to_clients(NetworkTarget::All),
+    ));
+
     commands
         .entity(current_player.0)
         .remove::<LocalPlayer>()
@@ -83,28 +89,6 @@ fn handle_morph(
             memberships: PhysicsLayers::Prop.into(),
             ..default()
         });
-
-    let normal = (current_player.1.translation - target.1.translation).normalize_or_zero();
-
-    let entity = commands
-        .spawn((
-            TrailParticleEmitter {
-                following: target.0,
-            },
-            TransformTween::<()> {
-                reference: *current_player.1,
-                target: *target.1,
-                duration: Duration::from_millis(500),
-                ..default()
-            },
-            // DespawnOnTime::new(Duration::from_millis(900)),
-            ParticleEffect::new((&**magic_effect).clone()),
-            EffectProperties::default()
-                .with_properties([(String::from("normal"), VectorValue::new_vec3(normal).into())]),
-        ))
-        .id();
-
-    commands.delayed().secs(0.9).entity(entity).despawn();
 
     commands.entity(camera.0).insert(CameraTween {
         reference: camera.1.clone(),

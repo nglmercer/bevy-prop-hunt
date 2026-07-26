@@ -4,10 +4,12 @@ use lightyear::prelude::*;
 use super::cosmetic_data::CosmeticData;
 use super::player::Player;
 
+mod particles;
 mod physics;
 
 pub fn plugin(app: &mut App) {
     physics::plugin(app);
+    particles::plugin(app);
 
     app.component::<Player>().replicate_once();
     app.component::<Name>().replicate_once();
