@@ -1,7 +1,13 @@
+use std::net::{Ipv4Addr, SocketAddr};
+
 use bevy::feathers::FeathersPlugins;
 use bevy::prelude::*;
 use bevy_hanabi::HanabiPlugin;
+use lightyear::prelude::client::ClientPlugins;
+use lightyear::prelude::*;
+use lightyear::steam::client::SteamClientIo;
 
+use crate::shared::network::SERVER_PORT;
 use crate::utils::opacity::OpacityPlugin;
 
 mod camera;
@@ -25,11 +31,45 @@ pub fn plugin(app: &mut bevy::app::App) {
         pause_menu::plugin,
         renderer::cosmetic::plugin,
         ui::crosshair::plugin,
+        ClientPlugins::default(),
     ))
     .init_state::<states::ClientState>()
     .insert_state(camera::CameraMode::Playing)
     .add_systems(Startup, (cameras.spawn(), ui::crosshair::crosshair.spawn()))
-    .add_systems(PostStartup, start_paused);
+    .add_systems(PostStartup, start_paused)
+    .add_observer(on_connect);
+}
+
+#[derive(Event)]
+pub struct Connect {
+    pub host_mode: bool,
+}
+
+fn on_connect(ev: On<Connect>, mut commands: Commands) {
+    println!("[CONNECT] Handling");
+    if ev.host_mode {
+        println!("[CONNECT] Host mode");
+        return;
+    }
+
+    println!("[CONNECT] Client mode");
+
+    let server_addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), SERVER_PORT);
+
+    let entity = commands
+        .spawn((
+            Client::default(),
+            Link::new(None),
+            LocalAddr(SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 0)),
+            PeerAddr(server_addr),
+            SteamClientIo {
+                target: client::ConnectTarget::Addr(server_addr),
+                config: SessionConfig::default(),
+            },
+        ))
+        .id();
+
+    commands.trigger(lightyear::prelude::Connect { entity });
 }
 
 fn cameras() -> impl SceneList {

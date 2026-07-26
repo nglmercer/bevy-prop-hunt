@@ -18,7 +18,7 @@ pub struct CameraSystemsSet;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        FixedPostUpdate,
+        PostUpdate,
         (
             update_player_camera,
             update_fixed_player_camera,

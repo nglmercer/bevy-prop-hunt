@@ -20,7 +20,7 @@ use crate::utils::tween::TransformTween;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        FixedPostUpdate,
+        PostUpdate,
         (retarget.run_if(in_state(CameraMode::Playing)),)
             .chain()
             .after(CameraSystemsSet),

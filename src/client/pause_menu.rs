@@ -6,15 +6,15 @@ use bevy::feathers::theme::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use bevy::ui_widgets::Activate;
-use bevy::window::CursorGrabMode;
-use bevy::window::CursorOptions;
-use bevy_tweening::AnimTarget;
-use bevy_tweening::Tween;
-use bevy_tweening::TweenAnim;
+use bevy::window::{CursorGrabMode, CursorOptions};
 use bevy_tweening::lens::UiPositionLens;
+use bevy_tweening::{AnimTarget, Tween, TweenAnim};
 
+use crate::client::Connect;
 use crate::client::states::ClientState;
-use crate::utils::{lenses::FadeLens, opacity::Opacity};
+use crate::server::Host;
+use crate::utils::lenses::FadeLens;
+use crate::utils::opacity::Opacity;
 
 pub fn plugin(app: &mut App) {
     app.insert_resource(UiTheme(create_dark_theme()))
@@ -77,9 +77,13 @@ fn pause_menu() -> impl Scene {
                 menu_button(0, "Resume")
                 on(|_: On<Activate>, mut commands: Commands| commands.trigger(Resume))
                 ,
-                menu_button(1, "Settings")
+                menu_button(1, "Host")
+                on(|_: On<Activate>, mut commands: Commands| commands.trigger(Host))
                 ,
-                menu_button(2, "Quit")
+                menu_button(2, "Connect")
+                on(|_: On<Activate>, mut commands: Commands| commands.trigger(Connect { host_mode: false }))
+                ,
+                menu_button(3, "Quit")
                 on(|_: On<Activate>, mut app_exit_writer: MessageWriter<AppExit>| {app_exit_writer.write(AppExit::Success);})
             ]
         ]
