@@ -2,66 +2,59 @@ use avian3d::math::*;
 use avian3d::prelude::*;
 use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
+use leafwing_input_manager::prelude::ActionState;
+use lightyear::input::client::InputSystems;
+use lightyear::prelude::Predicted;
 
 use crate::client::{
     camera::{CameraMode, PlayerCamera, RADIANS_PER_DOT},
     states::ClientState,
 };
 use crate::shared::player::LocalPlayer;
+use crate::shared::player::PlayerAction;
+use crate::shared::player::movement::PropPhysics;
+use crate::shared::player::movement::move_player;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
-        RunFixedMainLoop,
-        (move_player, update_look)
-            .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),
+        FixedUpdate,
+        (
+            update_look
+                .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),
+            handle_player_actions,
+        ),
+    )
+    .add_systems(
+        FixedPreUpdate,
+        (update_player_actions
+            .before(InputSystems::BufferClientInputs)
+            .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),)
+            .chain(),
     );
 }
 
-fn move_player(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>,
+fn update_player_actions(
     camera: Single<&PlayerCamera>,
-    raycast: SpatialQuery,
-    mut player: Single<(Entity, &Transform, &mut LinearVelocity, &Collider), With<LocalPlayer>>,
+    mut input: Single<&mut ActionState<PlayerAction>, With<LocalPlayer>>,
 ) {
-    let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
-    let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
-    let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
-    let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
+    let dir = input.clamped_axis_pair(&PlayerAction::Move);
+    let dir = Vector2::from_angle(camera.yaw).rotate(dir);
 
-    let horizontal = right as i8 - left as i8;
-    let vertical = up as i8 - down as i8;
-    let direction = Vector2::from_angle(camera.yaw)
-        .rotate(Vector2::new(horizontal as Scalar, vertical as Scalar).clamp_length_max(1.0));
+    input.set_axis_pair(&PlayerAction::Move, dir);
+}
 
-    let delta_secs = time.delta_secs();
+fn handle_player_actions(
+    time: Res<Time>,
+    raycast: SpatialQuery,
+    mut query: Query<(Entity, &ActionState<PlayerAction>, PropPhysics), With<Predicted>>,
+    // is_server: Query<(), With<Server>>,
+) {
+    // if !is_server.is_empty() {
+    //     return;
+    // }
 
-    if direction != Vector2::ZERO {
-        player.2.x += direction.x * 50. * delta_secs;
-        player.2.z -= direction.y * 50. * delta_secs;
-
-        let out = player.2.xz().clamp_length_max(20.);
-        player.2.x = out.x;
-        player.2.z = out.y;
-    }
-
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        let hit_data = raycast.cast_shape(
-            player.3,
-            player.1.translation,
-            player.1.rotation,
-            Dir3::NEG_Y,
-            &ShapeCastConfig {
-                max_distance: 0.1,
-                compute_contact_on_penetration: false,
-                ..default()
-            },
-            &SpatialQueryFilter::default().with_excluded_entities([player.0]),
-        );
-
-        if hit_data.is_some() {
-            player.2.y = 10.;
-        }
+    for (entity, action_state, physics) in &mut query {
+        move_player(&time, &raycast, entity, action_state, physics);
     }
 }
 

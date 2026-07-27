@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use avian3d::prelude::{Collider, CollisionLayers, RigidBody};
 use bevy::prelude::*;
-use lightyear::connection::host::HostPlugin;
 use lightyear::prelude::server::*;
 use lightyear::prelude::*;
 use lightyear::steam::server::SteamServerIo;
@@ -19,6 +18,7 @@ pub fn plugin(app: &mut App) {
         // 15 fps
         .insert_resource(ReplicationMetadata::new(Duration::from_millis(67)))
         .add_plugins((ServerPlugins::default(),))
+        // .add_systems(FixedUpdate, handle_player_actions)
         .add_observer(on_host)
         .add_observer(on_server_started)
         .add_observer(on_new_client)
@@ -50,8 +50,6 @@ fn on_host(_: On<Host>, mut commands: Commands) {
     ));
 
     commands.trigger(Start { entity: server });
-
-    // commands.spawn(player_bundle(PeerId::Server, client));
 
     test_scene(commands);
 }
@@ -115,3 +113,13 @@ fn player_bundle(peer_id: PeerId, owner: Entity) -> impl Bundle {
         InterpolationTarget::to_clients(NetworkTarget::All),
     )
 }
+
+// fn handle_player_actions(
+//     time: Res<Time>,
+//     raycast: SpatialQuery,
+//     mut query: Query<(Entity, &ActionState<PlayerAction>, PropPhysics)>,
+// ) {
+//     for (entity, action_state, physics) in &mut query {
+//         move_player(&time, &raycast, entity, action_state, physics);
+//     }
+// }

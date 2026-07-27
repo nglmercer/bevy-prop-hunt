@@ -4,6 +4,7 @@ def "main" [] {
     "lightyear_aeronet": debug
     "lightyear_debug": off
     "lightyear_deterministic_replication": off
+    "lightyear_inputs": off
     "lightyear_interpolation": off
     "lightyear_messages": debug
     "lightyear_prediction": off

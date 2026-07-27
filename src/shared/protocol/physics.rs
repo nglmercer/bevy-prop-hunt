@@ -3,6 +3,10 @@ use bevy::app::App;
 use lightyear::prelude::*;
 
 pub fn plugin(app: &mut App) {
+    app.component::<RigidBody>().replicate_once();
+    app.component::<Collider>().replicate_once();
+    app.component::<CollisionLayers>().replicate();
+
     app.component::<LinearVelocity>()
         .replicate()
         .predict()

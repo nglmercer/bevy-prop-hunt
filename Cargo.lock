@@ -572,6 +572,7 @@ dependencies = [
  "disqualified",
  "glam_matrix_extras",
  "itertools 0.15.0",
+ "libm",
  "obvhs",
  "parry3d",
  "parry3d-f64",
@@ -3860,6 +3861,7 @@ checksum = "db060a7f23a5666ccbe9c770cd0e0e419b2eb94c86a7c8bfd091bacf8b4926cd"
 dependencies = [
  "bevy_reflect",
  "glam",
+ "libm",
  "serde",
 ]
 
@@ -4745,6 +4747,7 @@ dependencies = [
  "lightyear_link",
  "lightyear_prediction",
  "lightyear_replication",
+ "seahash",
  "tracing",
 ]
 
@@ -4767,6 +4770,7 @@ dependencies = [
  "lightyear_link",
  "lightyear_prediction",
  "lightyear_replication",
+ "seahash",
  "tracing",
 ]
 
@@ -6315,6 +6319,7 @@ dependencies = [
  "foldhash 0.2.0",
  "glamx",
  "hashbrown 0.16.1",
+ "indexmap",
  "log",
  "num-derive",
  "num-traits",
@@ -6346,6 +6351,7 @@ dependencies = [
  "foldhash 0.2.0",
  "glamx",
  "hashbrown 0.16.1",
+ "indexmap",
  "log",
  "num-derive",
  "num-traits",
@@ -6687,6 +6693,7 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_hanabi",
  "bevy_tweening",
+ "leafwing-input-manager",
  "lightyear",
  "rand 0.10.2",
  "serde",
@@ -7481,6 +7488,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c99284beb21666094ba2b75bbceda012e610f5479dfcc2d6e2426f53197ffd95"
 dependencies = [
  "approx",
+ "libm",
  "num-complex",
  "num-traits",
  "paste",

@@ -3,7 +3,6 @@ use std::time::Duration;
 use avian3d::prelude::{CollisionLayers, SpatialQuery, SpatialQueryFilter};
 use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
-use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use lightyear::prelude::{MessageManager, NetworkTarget, Replicate};
 
@@ -28,9 +27,9 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         (
             update_colddown,
-            handle_morph
-                .run_if(in_state(CameraMode::Playing))
-                .run_if(input_just_pressed(MouseButton::Left)),
+            // handle_morph
+            //     .run_if(in_state(CameraMode::Playing))
+            // .run_if(input_just_pressed(MouseButton::Left)),
         )
             .run_if(in_state(ClientState::Running)),
     );
