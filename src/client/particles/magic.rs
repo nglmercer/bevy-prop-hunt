@@ -71,11 +71,11 @@ fn register_particle(mut commands: Commands, mut effects: ResMut<Assets<EffectAs
     .init(init_vel)
     .init(init_lifetime)
     .render(SizeOverLifetimeModifier {
-        gradient: size_gradient.into(),
+        gradient: size_gradient,
         ..default()
     })
     .render(OrientModifier::new(OrientMode::FaceCameraPosition))
-    .render(ColorOverLifetimeModifier::new(color_gradient.into()));
+    .render(ColorOverLifetimeModifier::new(color_gradient));
 
     let effect = effects.add(effect);
 

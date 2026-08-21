@@ -51,7 +51,7 @@ impl SmoothTransformLens {
 
 impl Lens<Transform> for SmoothTransformLens {
     fn lerp(&mut self, mut target: Mut<'_, Transform>, ratio: f32) {
-        smooth_transform_lerp(&mut *target, &self.start, &self.end, ratio);
+        smooth_transform_lerp(&mut target, &self.start, &self.end, ratio);
     }
 }
 

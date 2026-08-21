@@ -5,7 +5,7 @@ use super::cosmetic_data::CosmeticData;
 
 mod particles;
 mod physics;
-mod player;
+pub mod player;
 
 pub fn plugin(app: &mut App) {
     player::plugin(app);

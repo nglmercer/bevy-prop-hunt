@@ -27,21 +27,35 @@ type OnlyFreeCamera = (Without<PlayerCamera>, With<FreeCamera>);
 
 type CameraBundle<'a> = (&'a mut Camera, Entity, &'a Transform);
 
+#[derive(Component)]
+struct FreecamControlsObserverInstalled;
+
 fn calculate_tween_duration(player_transform: &Transform, debug_transform: &Transform) -> u64 {
     let camera_distance = player_transform
         .translation
         .distance(debug_transform.translation);
 
-    (camera_distance.sqrt() * 100.).min(400.).max(200.) as u64
+    (camera_distance.sqrt() * 100.).clamp(200., 400.) as u64
 }
 
 fn enable_freecam(
     mut commands: Commands,
     mut player_camera: Single<CameraBundle, OnlyPlayerCamera>,
-    mut freecam: Single<(CameraBundle, Option<&mut FreeCameraState>), OnlyFreeCamera>,
+    mut freecam: Single<
+        (
+            CameraBundle,
+            Option<&mut FreeCameraState>,
+            Has<FreecamControlsObserverInstalled>,
+        ),
+        OnlyFreeCamera,
+    >,
 ) {
     let (ref mut player_camera, player_entity, player_transform) = *player_camera;
-    let ((ref mut freecam, freecam_entity, _freecam_transform), ref mut freecam_state) = *freecam;
+    let (
+        (ref mut freecam, freecam_entity, _freecam_transform),
+        ref mut freecam_state,
+        observer_installed,
+    ) = *freecam;
 
     if freecam.is_active {
         return;
@@ -73,8 +87,8 @@ fn enable_freecam(
 
     let tween_duration = calculate_tween_duration(player_transform, &end_transform);
 
-    commands
-        .entity(freecam_entity)
+    let mut freecam_commands = commands.entity(freecam_entity);
+    freecam_commands
         .insert(*player_transform)
         .tween_component::<Transform>(
             Tween::new(
@@ -83,8 +97,13 @@ fn enable_freecam(
                 SmoothTransformLens::new(*player_transform, end_transform),
             )
             .with_cycle_completed_event(true),
-        )
-        .observe(enable_freecam_controls);
+        );
+
+    if !observer_installed {
+        freecam_commands
+            .insert(FreecamControlsObserverInstalled)
+            .observe(enable_freecam_controls);
+    }
 
     fn enable_freecam_controls(
         _: On<AnimCompletedEvent>,
@@ -95,7 +114,7 @@ fn enable_freecam(
             .entity(debug_camera.0)
             .insert_if_new(bevy::camera_controller::free_camera::FreeCamera { ..default() });
 
-        debug_camera.1.enabled ^= true;
+        debug_camera.1.enabled = true;
     }
 }
 

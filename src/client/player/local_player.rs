@@ -21,7 +21,7 @@ pub fn plugin(app: &mut App) {
         (
             update_look
                 .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),
-            handle_player_actions,
+            handle_player_actions.run_if(in_state(ClientState::Running)),
         ),
     )
     .add_systems(

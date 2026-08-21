@@ -2108,7 +2108,7 @@ dependencies = [
 [[package]]
 name = "bevy_tweening"
 version = "0.15.0"
-source = "git+https://github.com/Brayan-724/bevy_tweening#32505c2a4ed924f929ed4f1344392add583f5b36"
+source = "git+https://github.com/Brayan-724/bevy_tweening?rev=32505c2a4ed924f929ed4f1344392add583f5b36#32505c2a4ed924f929ed4f1344392add583f5b36"
 dependencies = [
  "bevy",
  "thiserror 2.0.18",

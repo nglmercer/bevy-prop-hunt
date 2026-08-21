@@ -5,6 +5,7 @@ use bevy::feathers::dark_theme::create_dark_theme;
 use bevy::feathers::theme::*;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
+use bevy::ui::InteractionDisabled;
 use bevy::ui_widgets::Activate;
 use bevy::window::{CursorGrabMode, CursorOptions};
 use bevy_tweening::lens::UiPositionLens;
@@ -13,6 +14,7 @@ use bevy_tweening::{AnimTarget, Tween, TweenAnim};
 use crate::client::Connect;
 use crate::client::states::ClientState;
 use crate::server::Host;
+use crate::shared::network::{ConnectionState, ConnectionStatus};
 use crate::utils::lenses::FadeLens;
 use crate::utils::opacity::Opacity;
 
@@ -22,12 +24,15 @@ pub fn plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                (|mut commands: Commands| commands.trigger(Pause))
-                    .run_if(in_state(PauseState::Ready)),
-                (|mut commands: Commands| commands.trigger(Resume))
-                    .run_if(in_state(PauseState::Paused)),
-            )
-                .run_if(input_just_pressed(KeyCode::Escape)),
+                (
+                    (|mut commands: Commands| commands.trigger(Pause))
+                        .run_if(in_state(PauseState::Ready)),
+                    (|mut commands: Commands| commands.trigger(Resume))
+                        .run_if(in_state(PauseState::Paused)),
+                )
+                    .run_if(input_just_pressed(KeyCode::Escape)),
+                update_connection_buttons,
+            ),
         )
         .add_observer(show_pause)
         .add_observer(hide_pause)
@@ -44,7 +49,10 @@ pub enum PauseState {
 }
 
 const BUTTON_MILLIS: u64 = 400;
-const MENU_DURATION: Duration = Duration::from_millis(BUTTON_MILLIS + 100 * 2);
+const BUTTON_DELAY_MILLIS: u64 = 100;
+const BUTTON_COUNT: u64 = 4;
+const MENU_DURATION: Duration =
+    Duration::from_millis(BUTTON_MILLIS + BUTTON_DELAY_MILLIS * (BUTTON_COUNT - 1));
 
 #[derive(Event)]
 pub struct Pause;
@@ -169,6 +177,30 @@ fn show_pause(
     }
 }
 
+fn update_connection_buttons(
+    connection: Res<ConnectionState>,
+    mut commands: Commands,
+    buttons: Query<(Entity, &MenuButton, Has<InteractionDisabled>)>,
+) {
+    let disabled = connection.status != ConnectionStatus::Disconnected;
+
+    for (entity, button, is_disabled) in &buttons {
+        if !matches!(button.0, 1 | 2) {
+            continue;
+        }
+
+        match (disabled, is_disabled) {
+            (true, false) => {
+                commands.entity(entity).insert(InteractionDisabled);
+            }
+            (false, true) => {
+                commands.entity(entity).remove::<InteractionDisabled>();
+            }
+            _ => {}
+        }
+    }
+}
+
 #[derive(Component, Default, Clone, Copy)]
 pub struct MenuButton(pub usize);
 
@@ -194,12 +226,14 @@ fn animate_enter(
 
     commands
         .delayed()
-        .duration(Duration::from_millis((100 * index) as u64 + BUTTON_MILLIS))
+        .duration(Duration::from_millis(
+            BUTTON_DELAY_MILLIS * *index as u64 + BUTTON_MILLIS,
+        ))
         .entity(trigger.entity);
 
     commands
         .delayed()
-        .duration(Duration::from_millis((100 * index) as u64))
+        .duration(Duration::from_millis(BUTTON_DELAY_MILLIS * *index as u64))
         .entity(trigger.entity)
         .with_child((
             AnimTarget::component::<Opacity>(trigger.entity),
@@ -244,7 +278,7 @@ fn animate_exit(
 
     commands
         .delayed()
-        .duration(Duration::from_millis((100 * index) as u64))
+        .duration(Duration::from_millis(BUTTON_DELAY_MILLIS * *index as u64))
         .entity(trigger.entity)
         .with_child((
             AnimTarget::component::<Opacity>(trigger.entity),

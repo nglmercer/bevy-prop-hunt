@@ -26,6 +26,16 @@ Difficult:
 
 `time = Difficult * 10 + Distance`
 
+---
+
+# Network configuration
+
+The client and host read these optional environment variables at startup:
+
+- `PROP_HUNT_SERVER_ADDR`, for example `192.168.1.20:6767`
+- `PROP_HUNT_SERVER_BIND_ADDR`, for example `0.0.0.0:6767`
+- `PROP_HUNT_STEAM_APP_ID`, defaulting to `480` for development
+
 ### Coop tasks (Teams Mode)
 Big tasks that needs to be completed by two or more props.
 It will spawn randomly and will have a limited completion time based on difficult and average distance.

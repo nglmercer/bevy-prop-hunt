@@ -77,9 +77,7 @@ impl AsBindGroup for HoverExtension {
         "HoverExtension"
     }
 
-    fn bind_group_data(&self) -> Self::Data {
-        ()
-    }
+    fn bind_group_data(&self) -> Self::Data {}
 
     fn unprepared_bind_group(
         &self,

@@ -61,7 +61,7 @@ fn update_crosshair(
 ) {
     let (ref mut bottom_loader_state, bottom_loader_mesh) = *bottom_loader;
 
-    let mut bottom_loader_progress = crosshair.bottom_loader.clone();
+    let mut bottom_loader_progress = crosshair.bottom_loader;
 
     if crosshair.bottom_loader.is_some() ^ bottom_loader_state.0 {
         bottom_loader_state.0 ^= true;

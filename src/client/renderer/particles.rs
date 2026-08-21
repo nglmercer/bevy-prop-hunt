@@ -47,7 +47,7 @@ pub fn magic_trail_particles(
                 duration: Duration::from_millis(500),
                 ..default()
             },
-            ParticleEffect::new((&**magic_effect).clone()),
+            ParticleEffect::new((**magic_effect).clone()),
             EffectProperties::default()
                 .with_properties([(String::from("normal"), VectorValue::new_vec3(normal).into())]),
         ))

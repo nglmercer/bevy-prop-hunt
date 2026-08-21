@@ -31,6 +31,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
+#[allow(clippy::type_complexity)]
 fn update_player_camera(
     mut gizmos: Gizmos,
     raycaster: SpatialQuery,
@@ -103,9 +104,11 @@ fn update_tween_player_camera(
 ) {
     let (ref mut camera_tween, camera_player) = *camera;
 
-    let mut target_transform = Transform::default();
-    target_transform.translation = camera_player.target_pos;
-    target_transform.rotation = camera_player.rot;
+    let target_transform = Transform {
+        translation: camera_player.target_pos,
+        rotation: camera_player.rot,
+        ..default()
+    };
 
     camera_tween.target = target_transform;
 }

@@ -11,7 +11,7 @@ use lightyear::prelude::client::ClientPlugins;
 use lightyear::prelude::*;
 use lightyear::steam::client::SteamClientIo;
 
-use crate::shared::network::{LocalClient, SERVER_PORT};
+use crate::shared::network::{ConnectionState, ConnectionStatus, LocalClient, NetworkConfig};
 use crate::utils::opacity::OpacityPlugin;
 
 use self::states::ClientState;
@@ -50,7 +50,9 @@ pub fn plugin(app: &mut bevy::app::App) {
     .insert_state(camera::CameraMode::Playing)
     .add_systems(Startup, (cameras.spawn(), ui::crosshair::crosshair.spawn()))
     .add_systems(PostStartup, start_paused)
-    .add_observer(on_connect);
+    .add_observer(on_connect)
+    .add_observer(on_local_client_connected)
+    .add_observer(on_local_client_disconnected);
 }
 
 #[derive(Event)]
@@ -58,16 +60,29 @@ pub struct Connect {
     pub host_mode: bool,
 }
 
-fn on_connect(ev: On<Connect>, mut commands: Commands) {
+fn on_connect(
+    ev: On<Connect>,
+    mut commands: Commands,
+    mut connection: ResMut<ConnectionState>,
+    config: Res<NetworkConfig>,
+    local_clients: Query<(), With<LocalClient>>,
+) {
     println!("[CONNECT] Handling");
     if ev.host_mode {
         println!("[CONNECT] Host mode");
         return;
     }
 
+    if connection.status != ConnectionStatus::Disconnected || !local_clients.is_empty() {
+        println!("[CONNECT] Ignoring duplicate client connection attempt");
+        return;
+    }
+
+    connection.status = ConnectionStatus::Connecting;
+
     println!("[CONNECT] Client mode");
 
-    let server_addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), SERVER_PORT);
+    let server_addr = config.server_addr;
 
     let entity = commands
         .spawn((
@@ -86,6 +101,31 @@ fn on_connect(ev: On<Connect>, mut commands: Commands) {
         .id();
 
     commands.trigger(lightyear::prelude::Connect { entity });
+}
+
+fn on_local_client_connected(
+    trigger: On<Add, Connected>,
+    mut connection: ResMut<ConnectionState>,
+    local_client: Query<(), (With<LocalClient>, With<Connected>)>,
+) {
+    if local_client.get(trigger.entity).is_ok() {
+        connection.status = ConnectionStatus::Connected;
+    }
+}
+
+fn on_local_client_disconnected(
+    trigger: On<Add, Disconnected>,
+    mut commands: Commands,
+    mut connection: ResMut<ConnectionState>,
+    local_client: Query<(), With<LocalClient>>,
+) {
+    if connection.status != ConnectionStatus::Connected || local_client.get(trigger.entity).is_err()
+    {
+        return;
+    }
+
+    connection.status = ConnectionStatus::Disconnected;
+    commands.entity(trigger.entity).despawn();
 }
 
 fn cameras() -> impl SceneList {

@@ -44,5 +44,8 @@ fn identify_players(
 fn clean_player(trigger: On<Remove, Player>, mut commands: Commands) {
     commands
         .entity(trigger.entity)
-        .remove::<InputMap<PlayerAction>>();
+        .remove::<InputMap<PlayerAction>>()
+        .remove::<LocalPlayer>()
+        .remove::<RemotePlayer>()
+        .remove::<crate::client::player::morphing::PropTarget>();
 }

@@ -30,7 +30,7 @@ impl<Marker> Default for TransformTween<Marker> {
             target: Transform::default(),
             time: Duration::default(),
             duration: Duration::default(),
-            marker: PhantomData::default(),
+            marker: PhantomData,
         }
     }
 }
@@ -38,11 +38,11 @@ impl<Marker> Default for TransformTween<Marker> {
 impl<Marker> Clone for TransformTween<Marker> {
     fn clone(&self) -> Self {
         Self {
-            reference: self.reference.clone(),
-            target: self.target.clone(),
-            time: self.time.clone(),
-            duration: self.duration.clone(),
-            marker: self.marker.clone(),
+            reference: self.reference,
+            target: self.target,
+            time: self.time,
+            duration: self.duration,
+            marker: self.marker,
         }
     }
 }

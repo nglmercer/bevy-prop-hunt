@@ -46,6 +46,7 @@ fn on_insert_opacity(trigger: On<Insert, Opacity>, mut commands: Commands, query
     });
 }
 
+#[allow(clippy::type_complexity)]
 fn on_changed_opacity(
     mut commands: Commands,
     query: Query<(

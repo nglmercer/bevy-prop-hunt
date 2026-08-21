@@ -1,10 +1,11 @@
 use std::time::Duration;
 
-use avian3d::prelude::{CollisionLayers, SpatialQuery, SpatialQueryFilter};
+use avian3d::prelude::{SpatialQuery, SpatialQueryFilter};
 use bevy::ecs::lifecycle::HookContext;
 use bevy::ecs::world::DeferredWorld;
 use bevy::prelude::*;
-use lightyear::prelude::{MessageManager, NetworkTarget, Replicate};
+use leafwing_input_manager::prelude::ActionState;
+use lightyear::prelude::MessageSender;
 
 use crate::client::camera::tween::{CameraSystemsSet, CameraTween};
 use crate::client::camera::{CameraMode, CurrentCamera, PlayerCamera};
@@ -14,7 +15,8 @@ use crate::client::ui::crosshair::Crosshair;
 use crate::shared::network::LocalClient;
 use crate::shared::particles::MagicTrailParticles;
 use crate::shared::physics::PhysicsLayers;
-use crate::shared::player::{LocalPlayer, Player};
+use crate::shared::player::{LocalPlayer, Player, PlayerAction};
+use crate::shared::protocol::player::{MorphChannel, MorphRequest};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -27,31 +29,35 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         (
             update_colddown,
-            // handle_morph
-            //     .run_if(in_state(CameraMode::Playing))
-            // .run_if(input_just_pressed(MouseButton::Left)),
+            handle_morph.run_if(in_state(CameraMode::Playing)),
         )
             .run_if(in_state(ClientState::Running)),
     );
 }
 
+#[allow(clippy::type_complexity)]
 fn handle_morph(
     mut commands: Commands,
-    message_manager: Single<&MessageManager, With<LocalClient>>,
-    current_player: Single<
-        (Entity, &Transform, &Player),
-        (
-            With<LocalPlayer>,
-            Without<MorphColddown>,
-            (Without<PropTarget>, Without<CurrentCamera>),
-        ),
+    message_sender: Option<Single<&mut MessageSender<MorphRequest>, With<LocalClient>>>,
+    action_state: Option<Single<&ActionState<PlayerAction>, With<LocalPlayer>>>,
+    current_player: Option<
+        Single<
+            (Entity, &Transform, &Player),
+            (
+                With<LocalPlayer>,
+                Without<MorphColddown>,
+                (Without<PropTarget>, Without<CurrentCamera>),
+            ),
+        >,
     >,
-    target: Single<
-        (Entity, &Transform),
-        (
-            With<PropTarget>,
-            (Without<LocalPlayer>, Without<CurrentCamera>),
-        ),
+    target: Option<
+        Single<
+            (Entity, &Transform),
+            (
+                With<PropTarget>,
+                (Without<LocalPlayer>, Without<CurrentCamera>),
+            ),
+        >,
     >,
     camera: Single<
         (Entity, &Transform),
@@ -62,36 +68,32 @@ fn handle_morph(
         ),
     >,
 ) {
-    commands
-        .entity(current_player.0)
-        .remove::<LocalPlayer>()
-        .remove::<Player>()
-        .insert(CollisionLayers {
-            memberships: PhysicsLayers::Prop.into(),
-            ..default()
-        });
+    let (Some(mut message_sender), Some(action_state), Some(current_player), Some(target)) =
+        (message_sender, action_state, current_player, target)
+    else {
+        return;
+    };
 
+    if !action_state.just_pressed(&PlayerAction::Morph) {
+        return;
+    }
+
+    message_sender.send::<MorphChannel>(MorphRequest { target: target.0 });
+
+    // The server performs the actual component and collision-layer transfer. The
+    // local cooldown only prevents duplicate requests while that update is in flight.
     commands
         .entity(target.0)
-        .remove::<PropTarget>()
-        .insert(*current_player.2)
-        .insert(LocalPlayer)
         .insert(MorphColddown(Duration::from_secs(1)))
-        .insert(CollisionLayers {
-            memberships: PhysicsLayers::Player.into(),
-            ..default()
-        });
+        .remove::<PropTarget>();
 
-    commands.spawn((
-        MagicTrailParticles {
-            from: *current_player.1,
-            following: message_manager.entity_mapper.to_remote(target.0),
-        },
-        Replicate::to_clients(NetworkTarget::All),
-    ));
+    commands.spawn(MagicTrailParticles {
+        from: *current_player.1,
+        following: target.0,
+    });
 
     commands.entity(camera.0).insert(CameraTween {
-        reference: camera.1.clone(),
+        reference: *camera.1,
         duration: Duration::from_millis(300),
         ..default()
     });
@@ -111,9 +113,7 @@ fn update_colddown(
 
         if colddown.0.is_zero() {
             commands.entity(entity).remove::<MorphColddown>();
-            if is_player {
-                crosshair.bottom_loader = None;
-            }
+            crosshair.bottom_loader = None;
         } else if is_player {
             crosshair.bottom_loader = Some(colddown.0.as_secs_f32());
         }

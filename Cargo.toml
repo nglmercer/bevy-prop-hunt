@@ -8,14 +8,18 @@
 name = "prop-hunt"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.95"
+
+[features]
+dev = ["bevy/debug"]
 
 [dependencies]
 avian3d = { version = "0.7.0", features = ["enhanced-determinism", "serialize"] }
 # bevy.workspace = true
-bevy = { version = "0.19.0", default-features = false, features = ["3d", "audio", "bevy_feathers", "debug", "free_camera", "ui"] }
+bevy = { version = "0.19.0", default-features = false, features = ["3d", "audio", "bevy_feathers", "free_camera", "ui"] }
 bevy-inspector-egui = "0.37.0"
 bevy_hanabi = { version = "0.19.0", default-features = false, features = ["3d"] }
-bevy_tweening = { git = "https://github.com/Brayan-724/bevy_tweening", default-features = false, features = ["bevy_ui"] }
+bevy_tweening = { git = "https://github.com/Brayan-724/bevy_tweening", rev = "32505c2a4ed924f929ed4f1344392add583f5b36", default-features = false, features = ["bevy_ui"] }
 leafwing-input-manager = "0.21.0"
 lightyear = { version = "0.28.0", features = ["avian3d", "crossbeam", "deterministic", "frame_interpolation", "leafwing", "netcode", "steam", "udp", "websocket"] }
 rand = "0.10.2"
