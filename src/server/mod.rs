@@ -4,6 +4,7 @@ use std::time::Duration;
 use avian3d::prelude::{Collider, CollisionLayers, RigidBody, SpatialQuery};
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
+use lightyear::input::client::InputSystems;
 use lightyear::prelude::input::leafwing::LeafwingBuffer;
 use lightyear::prelude::server::*;
 use lightyear::prelude::*;
@@ -13,7 +14,7 @@ use crate::shared::cosmetic_data::{CosmeticData, CosmeticMesh};
 use crate::shared::network::{ConnectionState, ConnectionStatus, LocalClient, NetworkConfig};
 use crate::shared::physics::PhysicsLayers;
 use crate::shared::player::movement::{JumpState, PropPhysics, move_player};
-use crate::shared::player::{Player, PlayerAction};
+use crate::shared::player::{LocalPlayer, Player, PlayerAction};
 use crate::shared::protocol::player::MorphRequest;
 use crate::test_scene;
 
@@ -24,11 +25,42 @@ pub fn plugin(app: &mut App) {
         .init_resource::<NextPlayerSpawnSlot>()
         .add_plugins((ServerPlugins::default(),))
         .add_systems(FixedUpdate, handle_player_actions)
+        .add_systems(
+            FixedPreUpdate,
+            strip_host_local_input_buffer.before(InputSystems::BufferClientInputs),
+        )
         .add_systems(Update, (update_morph_cooldowns, handle_morph_requests))
         .add_observer(on_host)
         .add_observer(on_server_started)
         .add_observer(on_new_client)
         .add_observer(on_client_connected);
+}
+
+/// In host mode the server-authoritative host player doubles as the local
+/// client's input entity. Lightyear's server `update_action_state` reconstructs
+/// `ActionState` from the entity's `InputBuffer` every fixed tick (running
+/// `after` the client's `buffer_action_state`), which clobbers leafwing's fresh
+/// `just_pressed` edge before the authoritative movement system reads it
+/// (confirmed: leafwing captures Jump, the server never sees the edge on a
+/// host). The host's own player receives no network-bound input — its input is
+/// local — so strip its input buffer and let leafwing be the sole writer.
+///
+/// Remote players keep their buffer, which is fed by inbound input packets.
+fn strip_host_local_input_buffer(
+    local_client: Single<Entity, With<LocalClient>>,
+    servers: Query<(), With<Server>>,
+    players: Query<(Entity, &ControlledBy), (With<Player>, With<LocalPlayer>)>,
+    mut commands: Commands,
+) {
+    if servers.is_empty() {
+        return;
+    }
+
+    for (entity, controlled) in &players {
+        if controlled.owner == *local_client {
+            commands.entity(entity).remove::<LeafwingBuffer<PlayerAction>>();
+        }
+    }
 }
 
 #[derive(Event)]

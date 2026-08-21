@@ -2,7 +2,7 @@ use avian3d::math::*;
 use avian3d::prelude::*;
 use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
-use leafwing_input_manager::prelude::ActionState;
+use leafwing_input_manager::prelude::{ActionState, InputMap};
 use lightyear::input::client::InputSystems;
 use lightyear::prelude::{Predicted, Server};
 
@@ -10,7 +10,7 @@ use crate::client::{
     camera::{CameraMode, PlayerCamera, RADIANS_PER_DOT},
     states::ClientState,
 };
-use crate::shared::player::LocalPlayer;
+use crate::shared::player::{LocalPlayer, Player};
 use crate::shared::player::PlayerAction;
 use crate::shared::player::movement::move_player;
 use crate::shared::player::movement::{JumpState, PropPhysics};
@@ -25,6 +25,7 @@ pub fn plugin(app: &mut App) {
                 .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),
         ),
     )
+    .add_systems(Update, diag_leafwing_input)
     .add_systems(
         FixedPreUpdate,
         (
@@ -35,6 +36,31 @@ pub fn plugin(app: &mut App) {
             .before(InputSystems::BufferClientInputs)
             .chain(),
     );
+}
+
+// DIAG: temporary. Distinguishes "leafwing never captures input (A)" from
+// "leafwing captures it but server's re-write drops the edge (B)" on the host.
+fn diag_leafwing_input(
+    players: Query<
+        (
+            Entity,
+            &Player,
+            &ActionState<PlayerAction>,
+            Has<InputMap<PlayerAction>>,
+        ),
+        With<LocalPlayer>,
+    >,
+) {
+    // Additionally print once if a local player exists at all but lacks an
+    // InputMap (possibility A: no input capture on the host entity).
+    for (entity, player, action_state, has_map) in &players {
+        if action_state.just_pressed(&PlayerAction::Jump) {
+            println!(
+                "[input-diag] LEAFWING local player entity={entity:?} peer={:?} has_inputmap={has_map} just_pressed(Jump)",
+                player.0
+            );
+        }
+    }
 }
 
 fn gate_player_input(
