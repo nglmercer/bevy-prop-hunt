@@ -95,6 +95,11 @@ pub fn plugin(app: &mut App) {
             replication_mode: lightyear::avian3d::plugin::AvianReplicationMode::Position,
             ..default()
         },
+        // Position mode applies prediction/correction/frame interpolation to
+        // Avian's Position and Rotation components. The renderer adds the
+        // matching FrameInterpolate markers to dynamic entities below.
+        lightyear::frame_interpolation::FrameInterpolationPlugin::<Position>::default(),
+        lightyear::frame_interpolation::FrameInterpolationPlugin::<Rotation>::default(),
         PhysicsPlugins::default()
             .build()
             // disable the position<>transform sync plugins as it is handled by lightyear_avian

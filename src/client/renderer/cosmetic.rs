@@ -1,3 +1,4 @@
+use avian3d::prelude::{Position, Rotation};
 use bevy::prelude::*;
 use lightyear::frame_interpolation::FrameInterpolate;
 
@@ -42,7 +43,12 @@ fn assign_hoverable_costemics(
 ) {
     for (entity, cosmetic_data) in cosmetic_data {
         commands.entity(entity).insert((
-            FrameInterpolate::<Transform>::default(),
+            // AvianReplicationMode::Position replicates and predicts Avian's
+            // Position/Rotation components. Keep frame interpolation on those
+            // same components so Lightyear's correction and visual history are
+            // applied to the values that drive the rendered Transform.
+            FrameInterpolate::<Position>::default(),
+            FrameInterpolate::<Rotation>::default(),
             Mesh3d(cosmetic_data.shape.resolve(&mut assets)),
             MeshMaterial3d(materials.add(hoverable_texture_material(debug_texture.0.clone()))),
         ));

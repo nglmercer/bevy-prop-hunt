@@ -159,6 +159,8 @@ fn handle_morph_requests(
                     owner: client_entity,
                     lifetime: Lifetime::Persistent,
                 },
+                ActionState::<PlayerAction>::default(),
+                LeafwingBuffer::<PlayerAction>::default(),
                 ServerMorphCooldown(Duration::from_secs(1)),
                 CollisionLayers {
                     memberships: PhysicsLayers::Player.into(),
@@ -231,6 +233,8 @@ fn player_bundle(peer_id: PeerId, owner: Entity, spawn_position: Vec3) -> impl B
     (
         Name::new(format!("Player {peer_id}")),
         Player(peer_id),
+        ActionState::<PlayerAction>::default(),
+        LeafwingBuffer::<PlayerAction>::default(),
         JumpState::default(),
         RigidBody::Dynamic,
         Collider::capsule(1., 2.),
@@ -255,9 +259,11 @@ fn player_bundle(peer_id: PeerId, owner: Entity, spawn_position: Vec3) -> impl B
     )
 }
 
+#[allow(clippy::type_complexity)]
 fn handle_player_actions(
     time: Res<Time>,
     raycast: SpatialQuery,
+    servers: Query<(), With<Server>>,
     mut query: Query<
         (
             Entity,
@@ -265,9 +271,16 @@ fn handle_player_actions(
             &mut JumpState,
             PropPhysics,
         ),
-        With<Player>,
+        (With<Player>, With<ControlledBy>),
     >,
 ) {
+    // ServerPlugins are present in the shared app used by a client-only
+    // instance. Only the authoritative server may run this system; otherwise
+    // the client prediction system would apply movement a second time.
+    if servers.is_empty() {
+        return;
+    }
+
     for (entity, action_state, mut jump_state, physics) in &mut query {
         move_player(
             &time,
