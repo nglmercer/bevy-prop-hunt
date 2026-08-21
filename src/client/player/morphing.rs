@@ -124,13 +124,18 @@ fn update_colddown(
 #[component(on_add = hightlight_target, on_remove= unhightlight_target)]
 pub struct PropTarget;
 
+#[allow(clippy::type_complexity)]
 fn retarget(
     mut commands: Commands,
     raycaster: SpatialQuery,
     camera: Single<(&Transform, &PlayerCamera), With<CurrentCamera>>,
     old_target: Option<Single<Entity, With<PropTarget>>>,
-    _: Single<(), (Without<MorphColddown>, With<LocalPlayer>)>,
+    local_player: Option<Single<(), (Without<MorphColddown>, With<LocalPlayer>)>>,
 ) {
+    if local_player.is_none() {
+        return;
+    }
+
     let Some(hit) = raycaster.cast_ray(
         camera.0.translation + camera.0.forward() * camera.1.player_distance,
         camera.0.forward(),

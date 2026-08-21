@@ -119,8 +119,7 @@ fn on_local_client_disconnected(
     mut connection: ResMut<ConnectionState>,
     local_client: Query<(), With<LocalClient>>,
 ) {
-    if connection.status != ConnectionStatus::Connected || local_client.get(trigger.entity).is_err()
-    {
+    if local_client.get(trigger.entity).is_err() {
         return;
     }
 

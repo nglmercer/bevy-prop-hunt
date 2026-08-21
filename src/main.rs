@@ -3,7 +3,7 @@ use std::f32::consts::TAU;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_tweening::TweeningPlugin;
-use lightyear::prelude::{InterpolationTarget, NetworkTarget, PredictionTarget, Replicate};
+use lightyear::prelude::{InterpolationTarget, NetworkTarget, Replicate};
 
 use self::shared::cosmetic_data::{CosmeticData, CosmeticMesh};
 use self::shared::physics::PhysicsLayers;
@@ -58,7 +58,6 @@ fn test_scene(mut commands: Commands) {
                 translation: Vec3::new(rand::random_range(-70.0..70.0), 5., rand::random_range(-70.0..70.0)),
             }
             template_value(Replicate::to_clients(NetworkTarget::All))
-            template_value(PredictionTarget::to_clients(NetworkTarget::All))
             template_value(InterpolationTarget::to_clients(NetworkTarget::All))
         }
     }

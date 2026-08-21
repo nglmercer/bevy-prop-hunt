@@ -28,16 +28,26 @@ impl NetworkConfig {
     pub fn from_env() -> Self {
         let defaults = Self::default();
 
+        let steam_app_id = match env::var("PROP_HUNT_STEAM_APP_ID") {
+            Ok(value) => value.parse().unwrap_or_else(|_| {
+                panic!("PROP_HUNT_STEAM_APP_ID must be a valid numeric Steam App ID")
+            }),
+            Err(env::VarError::NotPresent) if cfg!(feature = "dev") => defaults.steam_app_id,
+            Err(env::VarError::NotPresent) => {
+                panic!("PROP_HUNT_STEAM_APP_ID must be set for non-dev builds")
+            }
+            Err(env::VarError::NotUnicode(_)) => {
+                panic!("PROP_HUNT_STEAM_APP_ID must be valid UTF-8")
+            }
+        };
+
         Self {
             server_addr: socket_addr_from_env("PROP_HUNT_SERVER_ADDR", defaults.server_addr),
             server_bind_addr: socket_addr_from_env(
                 "PROP_HUNT_SERVER_BIND_ADDR",
                 defaults.server_bind_addr,
             ),
-            steam_app_id: env::var("PROP_HUNT_STEAM_APP_ID")
-                .ok()
-                .and_then(|value| value.parse().ok())
-                .unwrap_or(defaults.steam_app_id),
+            steam_app_id,
         }
     }
 }

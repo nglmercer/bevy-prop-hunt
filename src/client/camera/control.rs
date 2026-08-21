@@ -108,8 +108,13 @@ fn enable_freecam(
     fn enable_freecam_controls(
         _: On<AnimCompletedEvent>,
         mut commands: Commands,
+        camera_mode: Res<State<CameraMode>>,
         mut debug_camera: Single<(Entity, &mut FreeCameraState), With<FreeCamera>>,
     ) {
+        if *camera_mode.get() != CameraMode::Freecam {
+            return;
+        }
+
         commands
             .entity(debug_camera.0)
             .insert_if_new(bevy::camera_controller::free_camera::FreeCamera { ..default() });

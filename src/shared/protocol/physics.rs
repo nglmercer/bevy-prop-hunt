@@ -2,6 +2,8 @@ use avian3d::prelude::*;
 use bevy::app::App;
 use lightyear::prelude::*;
 
+use crate::shared::player::movement::JumpState;
+
 pub fn plugin(app: &mut App) {
     app.component::<RigidBody>().replicate_once();
     app.component::<Collider>().replicate_once();
@@ -30,6 +32,8 @@ pub fn plugin(app: &mut App) {
         .with_rollback_condition(rotation_should_rollback)
         .add_linear_correction_fn()
         .add_linear_interpolation();
+
+    app.component::<JumpState>().local_rollback();
 }
 
 fn position_should_rollback(this: &Position, that: &Position) -> bool {

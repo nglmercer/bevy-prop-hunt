@@ -34,7 +34,29 @@ The client and host read these optional environment variables at startup:
 
 - `PROP_HUNT_SERVER_ADDR`, for example `192.168.1.20:6767`
 - `PROP_HUNT_SERVER_BIND_ADDR`, for example `0.0.0.0:6767`
-- `PROP_HUNT_STEAM_APP_ID`, defaulting to `480` for development
+- `PROP_HUNT_STEAM_APP_ID`, defaulting to `480` only for `dev` builds; required for release builds
+
+## Two-client local test
+
+Steam must be running before starting the game. Build once from the repository root:
+
+```sh
+cargo build --features dev
+```
+
+Start the first instance and choose **Host** in the pause menu:
+
+```sh
+./target/debug/prop-hunt
+```
+
+Start a second instance in another terminal, choose **Connect**, and then choose **Resume** in both windows. The default address is `127.0.0.1:6767`.
+
+For a client connecting to another computer, set the server address before launching it:
+
+```sh
+PROP_HUNT_SERVER_ADDR=192.168.1.20:6767 ./target/debug/prop-hunt
+```
 
 ### Coop tasks (Teams Mode)
 Big tasks that needs to be completed by two or more props.

@@ -38,8 +38,12 @@ fn update_player_camera(
     cam_mode: Res<State<CameraMode>>,
     mut camera: Single<&mut PlayerCamera>,
     freecamera: Single<&Transform, (With<FreeCamera>, Without<PlayerCamera>)>,
-    player: Single<(&Transform, &Collider), (With<LocalPlayer>, Without<FreeCamera>)>,
+    player: Option<Single<(&Transform, &Collider), (With<LocalPlayer>, Without<FreeCamera>)>>,
 ) {
+    let Some(player) = player else {
+        return;
+    };
+
     match cam_mode.get() {
         CameraMode::Playing => {}
         CameraMode::Freecam => {
@@ -100,8 +104,12 @@ fn update_fixed_player_camera(
 }
 
 fn update_tween_player_camera(
-    mut camera: Single<(&mut TransformTween<SealedCameraTween>, &PlayerCamera)>,
+    camera: Option<Single<(&mut TransformTween<SealedCameraTween>, &PlayerCamera)>>,
 ) {
+    let Some(mut camera) = camera else {
+        return;
+    };
+
     let (ref mut camera_tween, camera_player) = *camera;
 
     let target_transform = Transform {

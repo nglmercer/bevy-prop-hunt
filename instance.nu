@@ -12,5 +12,5 @@ def "main" [] {
     "lightyear_sync": debug
     "lightyear_transport": debug
   } | transpose k v | each {$"($in.k)=($in.v)"} | str join ",";
-  cargo run
+  cargo run --features dev
 }

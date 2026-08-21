@@ -1,8 +1,10 @@
 use bevy::prelude::*;
-use leafwing_input_manager::prelude::{GamepadStick, InputMap, VirtualDPad};
-use lightyear::prelude::LocalId;
+use leafwing_input_manager::prelude::{ActionState, GamepadStick, InputMap, VirtualDPad};
+use lightyear::prelude::input::leafwing::LeafwingBuffer;
+use lightyear::prelude::{LocalId, Predicted};
 
 use crate::shared::network::LocalClient;
+use crate::shared::player::movement::JumpState;
 use crate::shared::player::{LocalPlayer, Player, PlayerAction, RemotePlayer};
 
 pub mod local_player;
@@ -27,6 +29,7 @@ fn identify_players(
     if local_client.0 == player.0 {
         commands.entity(trigger.entity).insert((
             LocalPlayer,
+            JumpState::default(),
             InputMap::<PlayerAction>::default()
                 .with(PlayerAction::Jump, KeyCode::Space)
                 .with(PlayerAction::Jump, GamepadButton::South)
@@ -37,7 +40,9 @@ fn identify_players(
                 .with_dual_axis(PlayerAction::Move, GamepadStick::LEFT),
         ));
     } else {
-        commands.entity(trigger.entity).insert(RemotePlayer);
+        commands
+            .entity(trigger.entity)
+            .insert((RemotePlayer, JumpState::default()));
     }
 }
 
@@ -45,6 +50,9 @@ fn clean_player(trigger: On<Remove, Player>, mut commands: Commands) {
     commands
         .entity(trigger.entity)
         .remove::<InputMap<PlayerAction>>()
+        .remove::<ActionState<PlayerAction>>()
+        .remove::<LeafwingBuffer<PlayerAction>>()
+        .remove::<Predicted>()
         .remove::<LocalPlayer>()
         .remove::<RemotePlayer>()
         .remove::<crate::client::player::morphing::PropTarget>();

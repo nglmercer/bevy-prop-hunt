@@ -2,6 +2,7 @@ use bevy::ecs::entity::{EntityMapper, MapEntities};
 use bevy::prelude::*;
 use lightyear::input::config::InputConfig;
 use lightyear::prelude::input::leafwing;
+use lightyear::prelude::input::server::{InputValidationAppExt, authorize_controlled_targets};
 use lightyear::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -29,6 +30,9 @@ pub fn plugin(app: &mut App) {
             ..default()
         },
     });
+    app.add_input_validator(
+        authorize_controlled_targets::<leafwing::LeafwingSequence<PlayerAction>>,
+    );
 
     app.add_channel::<MorphChannel>(ChannelSettings {
         mode: ChannelMode::OrderedReliable(ReliableSettings::default()),

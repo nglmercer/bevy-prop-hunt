@@ -4,7 +4,7 @@ use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 use lightyear::input::client::InputSystems;
-use lightyear::prelude::Predicted;
+use lightyear::prelude::{Predicted, Server};
 
 use crate::client::{
     camera::{CameraMode, PlayerCamera, RADIANS_PER_DOT},
@@ -12,8 +12,8 @@ use crate::client::{
 };
 use crate::shared::player::LocalPlayer;
 use crate::shared::player::PlayerAction;
-use crate::shared::player::movement::PropPhysics;
 use crate::shared::player::movement::move_player;
+use crate::shared::player::movement::{JumpState, PropPhysics};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -21,40 +21,85 @@ pub fn plugin(app: &mut App) {
         (
             update_look
                 .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),
-            handle_player_actions.run_if(in_state(ClientState::Running)),
+            handle_player_actions
+                .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),
         ),
     )
     .add_systems(
         FixedPreUpdate,
-        (update_player_actions
+        (
+            gate_player_input,
+            update_player_actions
+                .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),
+        )
             .before(InputSystems::BufferClientInputs)
-            .run_if(in_state(CameraMode::Playing).and_then(in_state(ClientState::Running))),)
             .chain(),
     );
 }
 
-fn update_player_actions(
-    camera: Single<&PlayerCamera>,
-    mut input: Single<&mut ActionState<PlayerAction>, With<LocalPlayer>>,
+fn gate_player_input(
+    client_state: Res<State<ClientState>>,
+    camera_mode: Res<State<CameraMode>>,
+    mut input: Query<&mut ActionState<PlayerAction>, With<LocalPlayer>>,
 ) {
+    let enabled =
+        *client_state.get() == ClientState::Running && *camera_mode.get() == CameraMode::Playing;
+
+    for mut input in &mut input {
+        if enabled {
+            input.enable();
+        } else {
+            input.reset_all();
+            input.disable();
+        }
+    }
+}
+
+fn update_player_actions(
+    camera: Option<Single<&PlayerCamera>>,
+    input: Option<Single<&mut ActionState<PlayerAction>, With<LocalPlayer>>>,
+) {
+    let (Some(camera), Some(mut input)) = (camera, input) else {
+        return;
+    };
+
     let dir = input.clamped_axis_pair(&PlayerAction::Move);
     let dir = Vector2::from_angle(camera.yaw).rotate(dir);
 
     input.set_axis_pair(&PlayerAction::Move, dir);
 }
 
+#[allow(clippy::type_complexity)]
 fn handle_player_actions(
     time: Res<Time>,
     raycast: SpatialQuery,
-    mut query: Query<(Entity, &ActionState<PlayerAction>, PropPhysics), With<Predicted>>,
-    // is_server: Query<(), With<Server>>,
+    servers: Query<(), With<Server>>,
+    mut query: Query<
+        (
+            Entity,
+            &ActionState<PlayerAction>,
+            &mut JumpState,
+            PropPhysics,
+        ),
+        (With<Predicted>, With<LocalPlayer>),
+    >,
 ) {
-    // if !is_server.is_empty() {
-    //     return;
-    // }
+    // A host-server shares the ECS world with its local client. The server
+    // simulation below is authoritative there, so do not run client
+    // prediction on the same world or the host would be simulated twice.
+    if !servers.is_empty() {
+        return;
+    }
 
-    for (entity, action_state, physics) in &mut query {
-        move_player(&time, &raycast, entity, action_state, physics);
+    for (entity, action_state, mut jump_state, physics) in &mut query {
+        move_player(
+            &time,
+            &raycast,
+            entity,
+            action_state,
+            &mut jump_state,
+            physics,
+        );
     }
 }
 
