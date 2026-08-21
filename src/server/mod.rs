@@ -46,6 +46,7 @@ pub fn plugin(app: &mut App) {
 /// local — so strip its input buffer and let leafwing be the sole writer.
 ///
 /// Remote players keep their buffer, which is fed by inbound input packets.
+#[allow(clippy::type_complexity)]
 fn strip_host_local_input_buffer(
     local_client: Single<Entity, With<LocalClient>>,
     servers: Query<(), With<Server>>,
@@ -58,7 +59,9 @@ fn strip_host_local_input_buffer(
 
     for (entity, controlled) in &players {
         if controlled.owner == *local_client {
-            commands.entity(entity).remove::<LeafwingBuffer<PlayerAction>>();
+            commands
+                .entity(entity)
+                .remove::<LeafwingBuffer<PlayerAction>>();
         }
     }
 }

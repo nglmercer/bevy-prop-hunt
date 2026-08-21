@@ -10,10 +10,10 @@ use crate::client::{
     camera::{CameraMode, PlayerCamera, RADIANS_PER_DOT},
     states::ClientState,
 };
-use crate::shared::player::{LocalPlayer, Player};
 use crate::shared::player::PlayerAction;
 use crate::shared::player::movement::move_player;
 use crate::shared::player::movement::{JumpState, PropPhysics};
+use crate::shared::player::{LocalPlayer, Player};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -40,6 +40,7 @@ pub fn plugin(app: &mut App) {
 
 // DIAG: temporary. Distinguishes "leafwing never captures input (A)" from
 // "leafwing captures it but server's re-write drops the edge (B)" on the host.
+#[allow(clippy::type_complexity)]
 fn diag_leafwing_input(
     players: Query<
         (
